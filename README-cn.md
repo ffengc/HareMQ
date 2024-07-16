@@ -174,3 +174,17 @@ sudo apt install libgtest-dev
 ![](./assets/5.png)
 
 </details>
+
+## 项目相关框架介绍和学习
+
+这是在我做这个项目过程中，学习一些要用的第三方框架所整理的文档和代码。
+
+如果对这一部分不感兴趣可以直接跳过。
+
+- 文档: [protobuf.md](./docs/proto.md), 代码: `HareMQ/demo/protobuf`
+- 文档: [muduo.md](./docs/muduo.md), 代码: `HareMQ/demo/muduo`
+- 文档: [sqlite.md](./docs/sqlite.md), 代码: `HareMQ/demo/sqlite`
+- 文档: [gtest.md](./docs/gtest.md), 代码: `HareMQ/demo/gtest`
+
+## 项目框架
+
