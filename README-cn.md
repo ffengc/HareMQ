@@ -45,3 +45,132 @@ RabbitMQ 是一个流行的开源消息队列系统，支持多种消息协议�
 - **⽹络通信：** ⾃定义应⽤层协议+muduo库：对tcp⻓连接的封装、并且使⽤epoll的事件驱动模式，实现⾼并发服务器与客⼾端•
 - **源数据信息数据库：** SQLite3
 -  **单元测试框架：** Gtest
+
+## 环境配置
+
+<details>
+  <summary><strong>配置和部署</strong></summary>
+
+
+### 基本工具
+
+**首先需要以下基本工具：**
+
+高于7的`gcc/g++`版本, git, cmake 等
+
+### 安装`protobuf`
+
+是一个序列化和反序列化工具。
+
+安装依赖：
+```sh
+# centos
+sudo yum install autoconf automake libtool curl make gcc-c++ unzip
+# ubuntu
+sudo apt update
+sudo apt install autoconf automake libtool curl make g++ unzip
+```
+下载`protobuf`包：
+```sh
+wget https://github.com/protocolbuffers/protobuf/releases/download/v3.20.2/protobuf-all-3.20.2.tar.gz
+```
+编译安装：
+```sh
+# 解压
+tar -zxf protobuf-all-3.20.2.tar.gz
+cd protobuf-3.20.2/
+# 运行目录配置脚本
+./autogen.sh
+# 运行配置脚本
+./configure
+# 编译(时间较长)
+make
+# 安装
+sudo make install
+# 确认是否安装成功
+protoc --version
+```
+![](./assets/2.png)
+如图所示即安装成功。
+
+### 安装muduo库
+
+下载源代码：
+
+```sh
+git clone https://github.com/chenshuo/muduo.git
+```
+
+安装依赖：
+```sh
+# centos
+sudo yum install gcc-c++ cmake make zlib zlib-devel boost-devel
+# ubuntu
+sudo apt update
+sudo apt install g++ cmake make zlib1g zlib1g-dev libboost-all-dev
+```
+编译安装：
+```
+./build.sh
+./build.sh install
+```
+
+> ‼️这里要说明一下，如果编译过程提示protoc相关库找不到，是因为protobuf当时安装路径和muduo要求的不同，需要行把相关库链接到指定位置（具体要看报错信息）。
+> 此外还有可能出现的问题是，boost库相关的错误（机子上装有python的conda），可能会出现muduo找boost的时候找到conda的boost里面去了，解决方法就是暂时把annaconda3隐藏，就可以编译成功。
+
+### 验证muduo是否安装成功
+
+> **Tips:** 编译好之后的`muduo`可执行是在上级目录的`build`里的，而不是在`muduo`目录里，是在和`muduo`同级的`build`目录下。
+
+![](./assets/3.png)
+
+进入muduo一些测试可执行的目录：`build/release-cpp11/bin`
+
+运行demo服务端：
+```sh
+./protobuf_server 9091
+```
+同样，如果出现链接错误，就把对应的库链接到对应的地方即可。
+
+启动demo客户端：
+```sh
+./protobuf_client 0.0.0.0 9091
+```
+
+![](./assets/4.png)
+
+如图所示即通过测试。
+
+### 安装SQLite3
+
+这是一个轻量级的数据库。
+
+```sh
+# centos
+sudo yum install sqlite-devel
+# ubuntu
+sudo apt install sqlite3
+# 验证安装
+sqlite3 --version
+```
+
+### 安装gtest测试框架
+
+```sh
+# centos
+sudo yum install epel-release
+sudo yum install dnf
+sudo dnf install dnf-plugins-core
+sudo dnf install gtest gtest-devel
+# ubuntu
+sudo apt update
+sudo apt install libgtest-dev
+```
+
+测试gtest是否安装成功：
+
+运行`env/test.cc`代码，如果输出正常则安装成功。
+
+![](./assets/5.png)
+
+</details>
