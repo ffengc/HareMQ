@@ -1,3 +1,5 @@
+![](./assets/1.png)
+
 <div align="center">
 
 # HareMQ
