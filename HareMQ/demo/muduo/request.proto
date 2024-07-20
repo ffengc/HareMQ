@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package yufc;
+
+message translateRequest {
+    string msg = 1;
+};
+
+message translateResponse {
+    string msg = 1;
+};
+
+message addRequest {
+    int32 num1 = 1;
+    int32 num2 = 2;
+};
+
+message addResponse {
+    int32 result = 1;
+};

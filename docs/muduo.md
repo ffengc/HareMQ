@@ -5,7 +5,8 @@
   - [快速上手搭建服务端](#快速上手搭建服务端)
   - [快速上手搭建客户端](#快速上手搭建客户端)
   - [上面搭建的服务端-客户端通信还有什么问题?](#上面搭建的服务端-客户端通信还有什么问题)
-  - [muduo库结合protobuf实现服务器demo](#muduo库结合protobuf实现服务器demo)
+  - [muduo库中的protobuf](#muduo库中的protobuf)
+  - [基于muduo库中的protobuf协议实现一个服务器](#基于muduo库中的protobuf协议实现一个服务器)
 
 ## muduo库是什么
 
@@ -331,4 +332,95 @@ clean:
 
 因此后面我们就要利用`protobuf`，结合`muduo`库，来简单实现一个服务器的demo。
 
-## muduo库结合protobuf实现服务器demo
+## muduo库中的protobuf
+
+muduo库已经给我们写好基于protobuf的网络通信协议框架了，已经写好了。
+
+路径: `muduo/examples/protobuf/codec`里面。
+
+![](./assets/8.png)
+
+定制的协议如下所示：
+
+![](./assets/9.png)
+
+调用流程如图所示:
+
+![](./assets/10.png)
+
+
+了解了上述关系，接下来就可以通过muduo库中陈硕大佬提供的接口来编写我们的客户端/服务器端通信了，其最为简便之处就在于我们可以把更多的精力放到业务处理函数的实现上，而不是服务器的搭建或者协议的解析处理上了。
+
+## 基于muduo库中的protobuf协议实现一个服务器
+
+基于muduo库中，对于protobuf协议的处理代码，实现一个翻译+加法服务器与客户端。
+1. 编写proto文件，生成相关结构代码
+2. 编写服务端代码，搭建服务器
+3. 编写客户端代码，搭建客户端
+
+定义proto文件。
+
+```proto
+syntax = "proto3";
+
+package yufc;
+
+message translateRequest {
+    string msg = 1;
+};
+
+message translateResponse {
+    string msg = 1;
+};
+
+message addRequest {
+    int32 num1 = 1;
+    int32 num2 = 2;
+};
+
+message addResponse {
+    int32 result = 1;
+};
+```
+
+如图所示生成proto文件。
+
+![](./assets/11.png)
+
+
+接下来我们要准备好头文件，是在example里面的。
+
+我们要把`muduo/examples/protobuf/codec`下的`dispatcher.h`, `codec.cc`和`codec.h`放到我们整理好的第三方库的地方去。
+
+> [!NOTE]
+> 这里可以把`codec.cc`里面的方法复制到`codec.h`里面，这样直接调用头文件即可
+> 如果不这样操作，等下编译的时候记得把`codec.cc`也进行编译
+
+> [!CAUTION]
+> 注意：如果没做上面这一步复制，`codec.cc`里面原来包含的头文件路径是`#include "examples/protobuf/codec/codec.h"`
+> 这个是错误的，现在的`codec.h`就在`codec.cc`同级目录下，所以应该直接修改成 `#include "codec.h"`
+> 此外，不同版本可能还会出现其他问题，头文件缺失等，需要自行去源代码中寻找，然后放到相应位置即可
+
+![](./assets/12.png)
+
+具体服务端客户端代码如何写，可以见我的demo代码，其实就是参照`muduo/examples/protobuf/codec`下面的例子去写的！
+
+更新后的 `makefile`
+
+这过程中遇到了许多问题，大家要记得链接库等这些细节了。
+
+```makefile
+server: proto_server.cc request.pb.cc /home/parallels/Project/HareMQ/HareMQ/libs/muduo/include/muduo/protoc/codec.cc
+	g++ -o $@ $^ -std=c++11 -I../../libs/muduo/include -L../../libs/muduo/lib -lmuduo_net -lmuduo_base -lpthread -lprotobuf -lz
+client: proto_client.cc request.pb.cc /home/parallels/Project/HareMQ/HareMQ/libs/muduo/include/muduo/protoc/codec.cc
+	g++ -o $@ $^ -std=c++11 -I../../libs/muduo/include -L../../libs/muduo/lib -lmuduo_net -lmuduo_base -lpthread -lprotobuf -lz
+.PHONY:clean
+clean:
+	rm -f server client
+```
+
+![](./assets/13.png)
+
+![](./assets/14.png)
+
+这样就是测试成功了。
