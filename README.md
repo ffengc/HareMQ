@@ -175,3 +175,16 @@ Run the `env/test.cc` code. If the output is normal, the installation is success
 ![](./assets/5.png)
 
 </details>
+
+## Introduction and learning of project related frameworks
+
+These are the documents and codes I compiled while learning some third-party frameworks I needed to use during this project.
+
+If you are not interested in this part or have already mastered the use of these frameworks, you can skip it directly.
+
+- doc: [protobuf.md](./docs/proto.md), code: `HareMQ/demo/protobuf`
+- doc: [muduo.md](./docs/muduo.md), code: `HareMQ/demo/muduo`
+- doc: [sqlite.md](./docs/sqlite.md), code: `HareMQ/demo/sqlite`
+- doc: [gtest.md](./docs/gtest.md), code: `HareMQ/demo/gtest`
+
+## Project Framework
