@@ -33,3 +33,7 @@
 
 # vscode
 .vscode
+
+# libs
+
+HareMQ/libs/*
