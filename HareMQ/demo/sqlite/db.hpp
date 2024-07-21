@@ -1,6 +1,9 @@
-/**
- * 封装sqlite常用方法
+/*
+ * Write by Yufc
+ * See https://github.com/ffengc/HareMQ
+ * please cite my project link: https://github.com/ffengc/HareMQ when you use this code
  */
+
 
 #ifndef __YUFC_SQLITE_HELPER__
 #define __YUFC_SQLITE_HELPER__

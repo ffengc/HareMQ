@@ -1,3 +1,8 @@
+/*
+ * Write by Yufc
+ * See https://github.com/ffengc/HareMQ
+ * please cite my project link: https://github.com/ffengc/HareMQ when you use this code
+ */
 
 #ifndef __YUFC_DEMO_DICT_CLIENT_USE_MUDUO__
 #define __YUFC_DEMO_DICT_CLIENT_USE_MUDUO__
