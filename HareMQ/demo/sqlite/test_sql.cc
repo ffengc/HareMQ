@@ -1,3 +1,8 @@
+/*
+ * Write by Yufc
+ * See https://github.com/ffengc/HareMQ
+ * please cite my project link: https://github.com/ffengc/HareMQ when you use this code
+ */
 
 #include "db.hpp"
 #include <assert.h>
