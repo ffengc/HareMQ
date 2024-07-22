@@ -185,6 +185,8 @@ sudo apt install libgtest-dev
 - 文档: [muduo.md](./docs/muduo.md), 代码: `HareMQ/demo/muduo`
 - 文档: [sqlite.md](./docs/sqlite.md), 代码: `HareMQ/demo/sqlite`
 - 文档: [gtest.md](./docs/gtest.md), 代码: `HareMQ/demo/gtest`
+- 文档: [C++异步操作](./docs/asynchronous.md), 代码: `HareMQ/demo/asynchronous`
+- 文档: [基于C++异步操作实现的线程池组件](./docs/thread_pool.md), 代码: `HareMQ/demo/thread_pool`
 
 ## 项目框架
 
