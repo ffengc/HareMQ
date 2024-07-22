@@ -155,5 +155,3 @@ int main() {
 ```
 
 ![](./assets/16.png)
-
-

@@ -186,5 +186,7 @@ If you are not interested in this part or have already mastered the use of these
 - doc: [muduo.md](./docs/muduo.md), code: `HareMQ/demo/muduo`
 - doc: [sqlite.md](./docs/sqlite.md), code: `HareMQ/demo/sqlite`
 - doc: [gtest.md](./docs/gtest.md), code: `HareMQ/demo/gtest`
+- doc: [asynchronous in C++11](./docs/asynchronous.md), code: `HareMQ/demo/asynchronous`
+- doc: [Thread pool component based on C++ asynchronous operation](./docs/thread_pool.md), 代码: `HareMQ/demo/thread_pool`
 
 ## Project Framework
