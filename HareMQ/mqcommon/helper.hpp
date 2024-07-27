@@ -8,9 +8,13 @@
 #define __YUFC_COMMON_HELPER__
 
 #include "./logger.hpp"
+#include <atomic>
 #include <boost/algorithm/string.hpp>
+#include <iomanip>
 #include <iostream>
+#include <random>
 #include <sqlite3.h>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -61,6 +65,7 @@ public:
 };
 
 class string_helper {
+public:
     static size_t split(const std::string& str, const std::string& sep, std::vector<std::string>* out, bool if_compress = true) {
         // boost split
         if (if_compress) {
@@ -73,6 +78,28 @@ class string_helper {
     }
 };
 
+class uuid_helper {
+public:
+    std::string uuid() {
+        std::random_device rd;
+        std::mt19937_64 generator(rd());
+        std::uniform_int_distribution<int> distribution(0, 255);
+        std::stringstream ss;
+        for (int i = 0; i < 8; ++i) {
+            ss << std::setw(2) << std::setfill('0') << std::hex << distribution(generator);
+            if (i == 3 || i == 5 || i == 7)
+                ss << "-";
+            static std::atomic<size_t> seq(1); // 这里一定要静态，保证多次调用都是自增的
+            size_t num = seq.fetch_add(1);
+            for (int i = 7; i >= 0; i--) {
+                ss << std::setw(2) << std::setfill('0') << std::hex << ((num >> (i * 8)) & 0xff);
+                if (i == 6)
+                    ss << "-";
+            }
+        }
+        return ss.str();
+    }
+};
 } // namespace hare_mq
 
 #endif
