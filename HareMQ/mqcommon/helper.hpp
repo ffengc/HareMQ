@@ -10,12 +10,14 @@
 #include "./logger.hpp"
 #include <atomic>
 #include <boost/algorithm/string.hpp>
+#include <errno.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <random>
 #include <sqlite3.h>
 #include <sstream>
+#include <string.h>
 #include <string>
 #include <sys/stat.h>
 #include <vector>
@@ -108,6 +110,9 @@ private:
     std::string __file_name;
 
 public:
+    std::string path() { return __file_name; }
+
+public:
     file_helper(const std::string& file_name)
         : __file_name(file_name) { }
     ~file_helper() = default;
@@ -127,6 +132,8 @@ public:
     bool read(std::string& body) {
         // 获取文件大小，根据文件大小调整body的空间
         size_t fsize = this->size();
+        // 调整空间
+        body.resize(fsize);
         return read(&body[0], 0, fsize);
     }
     bool read(char* body, size_t offset, size_t len) {
@@ -172,17 +179,17 @@ public:
         fs.close();
         return true;
     }
-    bool create() {
-        std::ofstream ofs(__file_name, std::ios::binary | std::ios::out);
+    static bool create(const std::string& file_name) {
+        std::ofstream ofs(file_name, std::ios::binary | std::ios::out);
         if (ofs.is_open() == false) {
-            LOG(ERROR) << "create file error: " << __file_name << std::endl;
+            LOG(ERROR) << "create file error: " << file_name << "  # " << strerror(errno) << std::endl;
             return false;
         }
         ofs.close();
         return true;
     }
-    bool remove() {
-        return ::remove(__file_name.c_str()) == 0;
+    static bool remove(const std::string& file_name) {
+        return ::remove(file_name.c_str()) == 0;
     }
     static bool create_dir(const std::string& path) {
         // aaa/bbb/ccc/ddd
@@ -194,12 +201,11 @@ public:
         while (idx < path.size()) {
             pos = path.find("/", idx);
             if (pos == std::string::npos) {
-                std::string subpath = path.substr(idx);
-                return ::mkdir(subpath.c_str(), 0775) == 0;
+                return ::mkdir(path.c_str(), 0775) == 0;
             }
             std::string subpath = path.substr(0, pos);
             int ret = ::mkdir(subpath.c_str(), 0775);
-            if (ret != 0) {
+            if (ret != 0 && errno != EEXIST) {
                 LOG(ERROR) << "create dir: " << path << " failed" << std::endl;
                 return false;
             }
@@ -220,7 +226,7 @@ public:
     static std::string parent_dir(const std::string& file_name) {
         // aaa/bbb/ccc/test.txt
         // 获取父级目录
-        size_t pos = file_name.find_last_not_of("/");
+        size_t pos = file_name.find_last_of("/");
         if (pos == std::string::npos) // 当前目录
             return "./";
         std::string path = file_name.substr(0, pos);
