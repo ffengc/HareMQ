@@ -7,6 +7,7 @@
     - [sqlite基础操作](#sqlite基础操作)
     - [字符串操作](#字符串操作)
     - [UUID生成类](#uuid生成类)
+    - [文件基础操作](#文件基础操作)
 
 
 ## 项目目录结构创建
@@ -80,5 +81,36 @@ public:
         }
         return ss.str();
     }
+};
+```
+
+### 文件基础操作
+
+
+基本框架:
+
+```cpp
+class file_helper {
+private:
+    std::string __file_name;
+
+public:
+    file_helper(const std::string& file_name)
+        : __file_name(file_name) { }
+    ~file_helper() = default;
+
+public:
+    bool exists();
+    size_t size();
+    bool read(std::string& body);
+    bool read(std::string& body, size_t offset, size_t len);
+    bool write(const std::string& body);
+    bool write(const std::string& body, size_t offset);
+    bool create();
+    bool remove();
+    bool create_dir();
+    bool remove_dir();
+    static std::string parent_dir(const std::string& file_name);
+    bool rename(const std::string& name);
 };
 ```
