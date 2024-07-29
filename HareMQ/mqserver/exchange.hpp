@@ -153,16 +153,58 @@ private:
     std::unordered_map<std::string, exchange::ptr> __exchanges; // 管理所有的交换机
     std::mutex __mtx; // exchange_manager 会被多线程调用，管理一个互斥锁
 public:
-    exchange_manager(const std::string& dbfile);
+    exchange_manager(const std::string& dbfile)
+        : __mapper(dbfile) {
+        __exchanges = __mapper.all(); // 直接获取所有的交换机（恢复历史数据）
+    }
     void declare_exchange(const std::string& name,
         ExchangeType type,
         bool durable,
         bool auto_delete,
-        std::unordered_map<std::string, std::string>& args); // 声明交换机
-    void delete_exchange(const std::string& name); // 删除交换机
-    exchange::ptr select_exchange(const std::string& name); // 选择一台交换机
-    bool exists(const std::string& name); // 判断交换机是否存在
-    void clear_exchange(); // 清理所有交换机
+        std::unordered_map<std::string, std::string>& args) {
+        // 声明交换机
+        std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
+        auto it = __exchanges.find(name);
+        if (it != __exchanges.end()) // 如果交换机已经存在，不需要重复新增
+            return;
+        auto exp = std::make_shared<exchange>(name, type, durable, auto_delete, args);
+        if (durable == true)
+            __mapper.insert(exp);
+        __exchanges.insert({ name, exp });
+    }
+    void delete_exchange(const std::string& name) {
+        // 删除交换机
+        std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
+        // 如果存在就删除，如果不存在就直接返回
+        auto it = __exchanges.find(name);
+        if (it == __exchanges.end()) // 如果交换机不存在，直接返回
+            return;
+        // 删除
+        if (it->second->durable == true)
+            __mapper.remove(name); // 如果是持久化的才会调用mapper的删除
+        __exchanges.erase(name);
+    }
+    exchange::ptr select_exchange(const std::string& name) {
+        // 返回一台交换机对象
+        std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
+        // 如果存在就删除，如果不存在就直接返回
+        auto it = __exchanges.find(name);
+        if (it == __exchanges.end())
+            return exchange::ptr(); // null
+        return it->second;
+    }
+    bool exists(const std::string& name) {
+        // 判断交换机是否存在
+        std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
+        auto it = __exchanges.find(name);
+        if (it == __exchanges.end())
+            return false;
+        return true;
+    }
+    void clear_exchange() {
+        std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
+        __mapper.remove_table();
+        __exchanges.clear();
+    }
 };
-
 } // namespace hare_mq
