@@ -9,6 +9,8 @@
     - [UUID生成类](#uuid生成类)
     - [文件基础操作](#文件基础操作)
     - [测试文件相关操作](#测试文件相关操作)
+  - [消息类型定义](#消息类型定义)
+  - [交换机数据管理](#交换机数据管理)
 
 
 ## 项目目录结构创建
@@ -226,3 +228,133 @@ void test6() {
 
 符合预期。
 
+
+## 消息类型定义
+
+因此定义消息类型，其实就是定义一个消息类型的proto文件，并生成相关代码。
+
+消息的结构:
+1. 消息本身要素：
+   1. 消息属性: 消息属性包含这些内容。消息ID、消息投递模式: 非持久化/持久化模式、消息的`routing_key`
+   2. 消息有效载荷内容
+2. 消息额外存储所需要素
+3. 消息额外存储所需要素
+   1. 消息的存储长度
+   2. 消息的长度
+   3. 消息是否有效：注意这里并不使用bool类型，而是使用字符0/1，因为bool类型在持久化的时候所占长度不同，会导致，修改文件中消息有效位后消息长度发生变化，因此不用bool类型。
+
+定义proto文件。
+```proto
+syntax = "proto3";
+package hare_mq;
+enum ExchangeType {
+    UNKNOWTYPE = 0;
+    DIRECT = 1;
+    FANOUT = 2;
+    TOPIC = 3;
+};
+enum DeliveryMode {
+    UNKNOWTYPE = 0;
+    UNDURABLE = 1;
+    DURABLE = 2;
+};
+message BasicProperties {
+    string id = 1;
+    DeliveryMode delivery_mode = 2;
+    string routing_key = 3;
+};
+message Message {
+    message Payload {
+        BasicProperties properties = 1;
+        string body = 2;
+    };
+    Payload payload = 1;
+    uint32 offset = 2;
+    uint32 length = 3;
+    string valid = 4;
+};
+```
+
+![](./work-assets/7.png)
+
+## 交换机数据管理
+
+现在要开始编写`mqserver`里面的`exchagne,.hpp`了。
+
+代码基本结构如下所示:
+
+```cpp
+namespace hare_mq {
+/**
+ * 1. 交换机类
+ * 2. 交换机数据持久化管理类
+ * 3. 交换机数据内存管理类
+ */
+struct exchange {
+    /* 交换机类 */
+public:
+    using ptr = std::shared_ptr<exchange>;
+    std::string name; // 交换机名称
+    ExchangeType type; // 交换机类型
+    bool durable; // 持久化标志
+    bool auto_delete; // 自动删除标志
+    std::unordered_map<std::string, std::string> args; // 其他参数
+public:
+    exchange(const std::string ename,
+        ExchangeType etype,
+        bool edurable,
+        bool eauto_delete,
+        const std::unordered_map<std::string, std::string>& eargs)
+        : name(ename)
+        , type(etype)
+        , auto_delete(eauto_delete)
+        , args(eargs) { }
+    // args存储的格式是键值对，在存储数据库的时候，会组织一个字符串进行存储 key=value&key=value
+    void set_args(const std::string& str_args) {
+        /**
+         * 解析 str_args 字符串: key=value&key=value... 存到 args 成员变量中去
+         */
+    }
+    std::string get_args() {
+        /**
+         * set_args()的反操作，把args里面的数据序列化成 key=value&key=value... 的格式
+         */
+    }
+};
+
+class exchange_mapper {
+    /* 交换机数据持久化管理类 */
+private:
+    sqlite_helper __sql_helper; // sqlite操作句柄
+public:
+    exchange_mapper(const std::string& dbfile); // 构造，需要传递数据库文件名称
+public:
+    void create_table(); // 创建表
+    void remove_table(); // 删除表
+    void insert(exchange::ptr& e); // 插入交换机
+    void remove(const std::string& name); // 移除交换机
+    exchange::ptr one(const std::string& name); // 获取单个交换机
+    std::unordered_map<std::string, exchange::ptr> all(); // 获取全部交换机
+};
+
+class exchange_manager {
+    /* 交换机数据内存管理类 */
+private:
+    exchange_mapper __mapper; // 持久化管理
+    std::unordered_map<std::string, exchange::ptr> __exchanges; // 管理所有的交换机
+    std::mutex __mtx; // exchange_manager 会被多线程调用，管理一个互斥锁
+public:
+    exchange_manager(const std::string& dbfile);
+    void declare_exchange(const std::string& name,
+        ExchangeType type,
+        bool durable,
+        bool auto_delete,
+        std::unordered_map<std::string, std::string>& args); // 声明交换机
+    void delete_exchange(const std::string& name); // 删除交换机
+    exchange::ptr select_exchange(const std::string& name); // 选择一台交换机
+    bool exists(const std::string& name); // 判断交换机是否存在
+    void clear_exchange(); // 清理所有交换机
+};
+
+} // namespace hare_mq
+```
