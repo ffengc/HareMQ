@@ -363,3 +363,7 @@ Consumed messages need to be responded to. There are two response modes:
 - Publishing client: publish a message to a switch.
 
 </details>
+
+## Detailed implementation
+
+- **[./docs/work.md](./docs/work.md)**
