@@ -17,7 +17,7 @@ exchange_manager::ptr emp = nullptr;
 class exchange_test : public testing::Environment {
 public:
     virtual void SetUp() override {
-        emp = std::make_shared<exchange_manager>("./data/meta.db");
+        emp = std::make_shared<exchange_manager>("./data-exchange/meta.db");
     }
     virtual void TearDown() override {
         // emp->clear_exchange(); //
@@ -54,7 +54,6 @@ TEST(exchange_test, recovery) {
     ASSERT_EQ(emp->exists("exchange2"), true);
     ASSERT_EQ(emp->exists("exchange3"), false); // 这里应该是找不到的, 在上面被删掉了
     ASSERT_EQ(emp->exists("exchange4"), true);
-
 }
 #endif
 
