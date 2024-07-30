@@ -4,6 +4,9 @@
  * please cite my project link: https://github.com/ffengc/HareMQ when you use this code
  */
 
+#ifndef __YUFC_EXCHANGE__
+#define __YUFC_EXCHANGE__
+
 #include "../mqcommon/helper.hpp"
 #include "../mqcommon/logger.hpp"
 #include "../mqcommon/msg.pb.h"
@@ -67,20 +70,20 @@ public:
 };
 
 // 创建表的sql语句
-#define CREATE_TABLE "create table if not exists exchange_table(\
+#define EXCHANGE_CREATE_TABLE "create table if not exists exchange_table(\
             name varchar(32) primary key, \
             type int, \
             durable int, \
             auto_delete int, \
             args varchar(128));"
 // 删除表的sql语句
-#define DROP_TABLE "drop table if exists exchange_table;"
+#define EXCHANGE_DROP_TABLE "drop table if exists exchange_table;"
 // 新增交换机的sql语句
-#define INSERT_SQL "insert into exchange_table values('%s', %d, %d, %d, '%s');"
+#define EXCHANGE_INSERT_SQL "insert into exchange_table values('%s', %d, %d, %d, '%s');"
 // 删除交换机的sql语句
-#define DELETE_SQL "delete from exchange_table where name='%s';"
+#define EXCHANGE_DELETE_SQL "delete from exchange_table where name='%s';"
 // 查询获取所有交换机的sql语句
-#define SELECT_SQL "select name, type, durable, auto_delete, args from exchange_table;"
+#define EXCHANGE_SELECT_SQL "select name, type, durable, auto_delete, args from exchange_table;"
 
 class exchange_mapper {
     /* 交换机数据持久化管理类 */
@@ -99,35 +102,35 @@ public:
 public:
     void create_table() {
         // 创建表
-        bool ret = __sql_helper.exec(CREATE_TABLE, nullptr, nullptr);
+        bool ret = __sql_helper.exec(EXCHANGE_CREATE_TABLE, nullptr, nullptr);
         if (ret == false)
             abort();
     }
     void remove_table() {
         // 删除表
-        bool ret = __sql_helper.exec(DROP_TABLE, nullptr, nullptr);
+        bool ret = __sql_helper.exec(EXCHANGE_DROP_TABLE, nullptr, nullptr);
         if (ret == false)
             abort();
     }
-    void insert(exchange::ptr& e) {
+    bool insert(exchange::ptr& e) {
         // 插入交换机
         char sql_str[4096] = { 0 };
-        sprintf(sql_str, INSERT_SQL,
+        sprintf(sql_str, EXCHANGE_INSERT_SQL,
             e->name.c_str(), e->type,
             e->durable == true ? 1 : 0, e->auto_delete == true ? 1 : 0,
             e->get_args().c_str());
-        bool ret = __sql_helper.exec(sql_str, nullptr, nullptr);
+        return __sql_helper.exec(sql_str, nullptr, nullptr);
     }
     void remove(const std::string& name) {
         // 移除交换机
         char sql_str[4096] = { 0 };
-        sprintf(sql_str, DELETE_SQL, name.c_str());
+        sprintf(sql_str, EXCHANGE_DELETE_SQL, name.c_str());
         bool ret = __sql_helper.exec(sql_str, nullptr, nullptr);
     }
     std::unordered_map<std::string, exchange::ptr> all() {
         // recovery
         std::unordered_map<std::string, exchange::ptr> res;
-        __sql_helper.exec(SELECT_SQL, select_callback, &res); // 这个是需要回调来组织查询回来的结果的
+        __sql_helper.exec(EXCHANGE_SELECT_SQL, select_callback, &res); // 这个是需要回调来组织查询回来的结果的
         return res;
     }
 
@@ -218,3 +221,5 @@ public:
     }
 };
 } // namespace hare_mq
+
+#endif
