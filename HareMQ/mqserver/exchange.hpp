@@ -29,6 +29,7 @@ public:
     bool auto_delete; // 自动删除标志
     std::unordered_map<std::string, std::string> args; // 其他参数
 public:
+    exchange() { }
     exchange(const std::string ename,
         ExchangeType etype,
         bool edurable,
@@ -36,6 +37,7 @@ public:
         const std::unordered_map<std::string, std::string>& eargs)
         : name(ename)
         , type(etype)
+        , durable(edurable)
         , auto_delete(eauto_delete)
         , args(eargs) { }
     // args存储的格式是键值对，在存储数据库的时候，会组织一个字符串进行存储 key=value&key=value
@@ -69,10 +71,10 @@ public:
             name varchar(32) primary key, \
             type int, \
             durable int, \
-            delete int, \
+            auto_delete int, \
             args varchar(128));"
 // 删除表的sql语句
-#define DROP_TABLE "drop table if not exists exchange_table;"
+#define DROP_TABLE "drop table if exists exchange_table;"
 // 新增交换机的sql语句
 #define INSERT_SQL "insert into exchange_table values('%s', %d, %d, %d, '%s');"
 // 删除交换机的sql语句
@@ -91,6 +93,7 @@ public:
         std::string path = file_helper::parent_dir(dbfile);
         file_helper::create_dir(path);
         assert(__sql_helper.open());
+        create_table();
     }
 
 public:
@@ -110,8 +113,8 @@ public:
         // 插入交换机
         char sql_str[4096] = { 0 };
         sprintf(sql_str, INSERT_SQL,
-            e->name, e->type,
-            e->durable, e->auto_delete,
+            e->name.c_str(), e->type,
+            e->durable == true ? 1 : 0, e->auto_delete == true ? 1 : 0,
             e->get_args().c_str());
         bool ret = __sql_helper.exec(sql_str, nullptr, nullptr);
     }
@@ -148,6 +151,9 @@ private:
 
 class exchange_manager {
     /* 交换机数据内存管理类 */
+public:
+    using ptr = std::shared_ptr<exchange_manager>;
+
 private:
     exchange_mapper __mapper; // 持久化管理
     std::unordered_map<std::string, exchange::ptr> __exchanges; // 管理所有的交换机
@@ -205,6 +211,10 @@ public:
         std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
         __mapper.remove_table();
         __exchanges.clear();
+    }
+    size_t size() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        return __exchanges.size();
     }
 };
 } // namespace hare_mq
