@@ -14,6 +14,8 @@
   - [交换机部分单元测试](#交换机部分单元测试)
   - [队列数据管理](#队列数据管理)
   - [队列部分单元测试](#队列部分单元测试)
+  - [绑定信息管理](#绑定信息管理)
+  - [绑定信息管理测试](#绑定信息管理测试)
 
 
 ## 项目目录结构创建
@@ -398,3 +400,79 @@ public:
 这一部分和交换机部分基本完全相同。
 
 具体见代码。`HareMQ/mqtest/queue_test.cc`
+
+## 绑定信息管理
+
+本质上就是一个交换机关联了哪些队列的描述。
+
+**定义绑定信息类：**
+1. 交换机名称
+2. 队列名称
+3. `binding_key`(分发匹配规则-决定了哪些数据能被交换机放入队列)
+
+**定义绑定信息数据持久化类：**
+1. 创建/删除绑定信息数据表
+2. 新增绑定信息数据
+3. 移除指定绑定信息数据
+4. 移除指定交换机相关绑定信息数据
+5. 移除指定队列相关绑定信息数据
+6. 查询所有绑定信息数据
+7. 查询指定绑定信息数据（根据交换机-队列名称）
+
+**定义绑定信息数据管理类：**
+1. 创建绑定信息，并添加管理（存在则OK，不存在则创建）
+2. 删除指定队列的所有绑定信息
+3. 删除交换机相关的所有绑定信息
+4. 获取交换机相关的所有绑定信息
+5. 判断当前绑定信息是否存在
+6. 获取当前绑定信息数量
+7. 销毁所有绑定信息数据
+
+同样，也是第三个类才是对外的，和前面其实都是一样的。
+
+
+**一些实现的tips:**
+
+```cpp
+using msg_queue_binding_map = std::unordered_map<std::string, binding::ptr>;
+using binding_map = std::unordered_map<std::string, msg_queue_binding_map>;
+```
+为什么这样设计?
+
+**因为一个交换机可以有多个绑定信息，但是一个绑定信息一定只对应一个队列。**
+
+**所以让队列和绑定信息先构造一个一一对应的map。**
+
+其余基本东西和前面写过的基本都相同。要注意这里:
+
+
+```cpp
+    static int select_callback(void* arg, int numcol, char** row, char** fields) {
+        binding_map* result = (binding_map*)arg;
+        binding::ptr bp = std::make_shared<binding>(row[0], row[1], row[2]);
+        // 为了防止绑定信息已经存在，不能直接创建队列映射，直接添加，这样会覆盖历史数据
+        // 因此要先获得交换机对应的映射对象，往里面添加数据
+        // 但是若这个时候没有交换机对应的映射信息，因此这里的获取要使用引用（会保证不存在则自动创建）
+        msg_queue_binding_map& qmap = (*result)[bp->exchange_name]; // 这里比较巧妙
+        qmap.insert({ bp->msg_queue_name, bp });
+        return 0;
+    }
+```
+注意类型，不是直接插入。注意这两种类型即可。
+
+```cpp
+using msg_queue_binding_map = std::unordered_map<std::string, binding::ptr>;
+using binding_map = std::unordered_map<std::string, msg_queue_binding_map>;
+```
+
+绑定信息是否需要持久化取决于：交换机持久化+队列持久化，绑定信息才需要持久化。
+
+```cpp
+bool bind(const std::string& ename, const std::string& qname, const std::string& key, bool durable)
+```
+
+但是为了这些hpp之间是解耦合的，因此这里直接传递`bool durable`，让外部，让联合调用的时候直接告诉我是否需要持久化即可，而不是在这个文件里面去获取交换机和队列的数据，这样就耦合起来了，不是特别好。
+
+## 绑定信息管理测试
+
+测试和前面基本相同，不再重复，具体可见代码。`HareMQ/mqtest/binding_test.cc`。
