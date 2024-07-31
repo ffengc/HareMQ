@@ -55,20 +55,15 @@ struct msg_queue {
     }
 };
 using queue_map = std::unordered_map<std::string, msg_queue::ptr>;
-// 创建表的sql语句
 #define QUEUE_CREATE_TABLE "create table if not exists queue_table(\
             name varchar(32) primary key, \
             durable int, \
             exclusive int, \
             auto_delete int, \
             args varchar(128));"
-// 删除表的sql语句
 #define QUEUE_DROP_TABLE "drop table if exists queue_table;"
-// 新增交换机的sql语句
 #define QUEUE_INSERT_SQL "insert into queue_table values('%s', %d, %d, %d, '%s');"
-// 删除交换机的sql语句
 #define QUEUE_DELETE_SQL "delete from queue_table where name='%s';"
-// 查询获取所有交换机的sql语句
 #define QUEUE_SELECT_SQL "select * from queue_table;"
 
 class msg_queue_mapper {
@@ -93,7 +88,6 @@ public:
             abort();
     }
     bool insert(msg_queue::ptr& q) {
-        // 插入交换机
         char sql_str[4096] = { 0 };
         sprintf(sql_str, QUEUE_INSERT_SQL,
             q->name.c_str(), q->durable == true ? 1 : 0,
@@ -102,7 +96,6 @@ public:
         return __sql_helper.exec(sql_str, nullptr, nullptr);
     }
     void remove(const std::string& name) {
-        // 移除交换机
         char sql_str[4096] = { 0 };
         sprintf(sql_str, QUEUE_DELETE_SQL, name.c_str());
         bool ret = __sql_helper.exec(sql_str, nullptr, nullptr);
