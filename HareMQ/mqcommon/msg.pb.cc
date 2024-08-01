@@ -39,6 +39,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORIT
 PROTOBUF_CONSTEXPR Message_Payload::Message_Payload(
     ::_pbi::ConstantInitialized)
   : body_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , valid_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
   , properties_(nullptr){}
 struct Message_PayloadDefaultTypeInternal {
   PROTOBUF_CONSTEXPR Message_PayloadDefaultTypeInternal()
@@ -51,8 +52,7 @@ struct Message_PayloadDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 Message_PayloadDefaultTypeInternal _Message_Payload_default_instance_;
 PROTOBUF_CONSTEXPR Message::Message(
     ::_pbi::ConstantInitialized)
-  : valid_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
-  , payload_(nullptr)
+  : payload_(nullptr)
   , offset_(0u)
   , length_(0u){}
 struct MessageDefaultTypeInternal {
@@ -87,6 +87,7 @@ const uint32_t TableStruct_msg_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(prot
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::hare_mq::Message_Payload, properties_),
   PROTOBUF_FIELD_OFFSET(::hare_mq::Message_Payload, body_),
+  PROTOBUF_FIELD_OFFSET(::hare_mq::Message_Payload, valid_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::hare_mq::Message, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -96,12 +97,11 @@ const uint32_t TableStruct_msg_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(prot
   PROTOBUF_FIELD_OFFSET(::hare_mq::Message, payload_),
   PROTOBUF_FIELD_OFFSET(::hare_mq::Message, offset_),
   PROTOBUF_FIELD_OFFSET(::hare_mq::Message, length_),
-  PROTOBUF_FIELD_OFFSET(::hare_mq::Message, valid_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::hare_mq::BasicProperties)},
   { 9, -1, -1, sizeof(::hare_mq::Message_Payload)},
-  { 17, -1, -1, sizeof(::hare_mq::Message)},
+  { 18, -1, -1, sizeof(::hare_mq::Message)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -116,9 +116,9 @@ const char descriptor_table_protodef_msg_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "e_mq.DeliveryMode\022\023\n\013routing_key\030\003 \001(\t\"\252"
   "\001\n\007Message\022)\n\007payload\030\001 \001(\0132\030.hare_mq.Me"
   "ssage.Payload\022\016\n\006offset\030\002 \001(\r\022\016\n\006length\030"
-  "\003 \001(\r\022\r\n\005valid\030\004 \001(\t\032E\n\007Payload\022,\n\nprope"
-  "rties\030\001 \001(\0132\030.hare_mq.BasicProperties\022\014\n"
-  "\004body\030\002 \001(\t*A\n\014ExchangeType\022\016\n\nUNKNOWTYP"
+  "\003 \001(\r\032T\n\007Payload\022,\n\nproperties\030\001 \001(\0132\030.h"
+  "are_mq.BasicProperties\022\014\n\004body\030\002 \001(\t\022\r\n\005"
+  "valid\030\003 \001(\t*A\n\014ExchangeType\022\016\n\nUNKNOWTYP"
   "E\020\000\022\n\n\006DIRECT\020\001\022\n\n\006FANOUT\020\002\022\t\n\005TOPIC\020\003*:"
   "\n\014DeliveryMode\022\016\n\nUNKNOWMODE\020\000\022\r\n\tUNDURA"
   "BLE\020\001\022\013\n\007DURABLE\020\002b\006proto3"
@@ -471,6 +471,14 @@ Message_Payload::Message_Payload(const Message_Payload& from)
     body_.Set(from._internal_body(), 
       GetArenaForAllocation());
   }
+  valid_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    valid_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_valid().empty()) {
+    valid_.Set(from._internal_valid(), 
+      GetArenaForAllocation());
+  }
   if (from._internal_has_properties()) {
     properties_ = new ::hare_mq::BasicProperties(*from.properties_);
   } else {
@@ -483,6 +491,10 @@ inline void Message_Payload::SharedCtor() {
 body_.InitDefault();
 #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
   body_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+valid_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  valid_.Set("", GetArenaForAllocation());
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 properties_ = nullptr;
 }
@@ -499,6 +511,7 @@ Message_Payload::~Message_Payload() {
 inline void Message_Payload::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   body_.Destroy();
+  valid_.Destroy();
   if (this != internal_default_instance()) delete properties_;
 }
 
@@ -513,6 +526,7 @@ void Message_Payload::Clear() {
   (void) cached_has_bits;
 
   body_.ClearToEmpty();
+  valid_.ClearToEmpty();
   if (GetArenaForAllocation() == nullptr && properties_ != nullptr) {
     delete properties_;
   }
@@ -541,6 +555,16 @@ const char* Message_Payload::_InternalParse(const char* ptr, ::_pbi::ParseContex
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "hare_mq.Message.Payload.body"));
+        } else
+          goto handle_unusual;
+        continue;
+      // string valid = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          auto str = _internal_mutable_valid();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "hare_mq.Message.Payload.valid"));
         } else
           goto handle_unusual;
         continue;
@@ -590,6 +614,16 @@ uint8_t* Message_Payload::_InternalSerialize(
         2, this->_internal_body(), target);
   }
 
+  // string valid = 3;
+  if (!this->_internal_valid().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_valid().data(), static_cast<int>(this->_internal_valid().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "hare_mq.Message.Payload.valid");
+    target = stream->WriteStringMaybeAliased(
+        3, this->_internal_valid(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -611,6 +645,13 @@ size_t Message_Payload::ByteSizeLong() const {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_body());
+  }
+
+  // string valid = 3;
+  if (!this->_internal_valid().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_valid());
   }
 
   // .hare_mq.BasicProperties properties = 1;
@@ -645,6 +686,9 @@ void Message_Payload::MergeFrom(const Message_Payload& from) {
   if (!from._internal_body().empty()) {
     _internal_set_body(from._internal_body());
   }
+  if (!from._internal_valid().empty()) {
+    _internal_set_valid(from._internal_valid());
+  }
   if (from._internal_has_properties()) {
     _internal_mutable_properties()->::hare_mq::BasicProperties::MergeFrom(from._internal_properties());
   }
@@ -670,6 +714,10 @@ void Message_Payload::InternalSwap(Message_Payload* other) {
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
       &body_, lhs_arena,
       &other->body_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &valid_, lhs_arena,
+      &other->valid_, rhs_arena
   );
   swap(properties_, other->properties_);
 }
@@ -700,14 +748,6 @@ Message::Message(::PROTOBUF_NAMESPACE_ID::Arena* arena,
 Message::Message(const Message& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  valid_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-    valid_.Set("", GetArenaForAllocation());
-  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (!from._internal_valid().empty()) {
-    valid_.Set(from._internal_valid(), 
-      GetArenaForAllocation());
-  }
   if (from._internal_has_payload()) {
     payload_ = new ::hare_mq::Message_Payload(*from.payload_);
   } else {
@@ -720,10 +760,6 @@ Message::Message(const Message& from)
 }
 
 inline void Message::SharedCtor() {
-valid_.InitDefault();
-#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  valid_.Set("", GetArenaForAllocation());
-#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
     reinterpret_cast<char*>(&payload_) - reinterpret_cast<char*>(this)),
     0, static_cast<size_t>(reinterpret_cast<char*>(&length_) -
@@ -741,7 +777,6 @@ Message::~Message() {
 
 inline void Message::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
-  valid_.Destroy();
   if (this != internal_default_instance()) delete payload_;
 }
 
@@ -755,7 +790,6 @@ void Message::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  valid_.ClearToEmpty();
   if (GetArenaForAllocation() == nullptr && payload_ != nullptr) {
     delete payload_;
   }
@@ -793,16 +827,6 @@ const char* Message::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) 
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
           length_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
-          goto handle_unusual;
-        continue;
-      // string valid = 4;
-      case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 34)) {
-          auto str = _internal_mutable_valid();
-          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "hare_mq.Message.valid"));
         } else
           goto handle_unusual;
         continue;
@@ -854,16 +878,6 @@ uint8_t* Message::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(3, this->_internal_length(), target);
   }
 
-  // string valid = 4;
-  if (!this->_internal_valid().empty()) {
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-      this->_internal_valid().data(), static_cast<int>(this->_internal_valid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "hare_mq.Message.valid");
-    target = stream->WriteStringMaybeAliased(
-        4, this->_internal_valid(), target);
-  }
-
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -879,13 +893,6 @@ size_t Message::ByteSizeLong() const {
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
-
-  // string valid = 4;
-  if (!this->_internal_valid().empty()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_valid());
-  }
 
   // .hare_mq.Message.Payload payload = 1;
   if (this->_internal_has_payload()) {
@@ -926,9 +933,6 @@ void Message::MergeFrom(const Message& from) {
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (!from._internal_valid().empty()) {
-    _internal_set_valid(from._internal_valid());
-  }
   if (from._internal_has_payload()) {
     _internal_mutable_payload()->::hare_mq::Message_Payload::MergeFrom(from._internal_payload());
   }
@@ -954,13 +958,7 @@ bool Message::IsInitialized() const {
 
 void Message::InternalSwap(Message* other) {
   using std::swap;
-  auto* lhs_arena = GetArenaForAllocation();
-  auto* rhs_arena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &valid_, lhs_arena,
-      &other->valid_, rhs_arena
-  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(Message, length_)
       + sizeof(Message::length_)

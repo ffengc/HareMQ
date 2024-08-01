@@ -25,9 +25,9 @@ message Message {
     message Payload {
         BasicProperties properties = 1;
         string body = 2;
+        string valid = 3;
     };
     Payload payload = 1;
     uint32 offset = 2;
     uint32 length = 3;
-    string valid = 4;
 };
