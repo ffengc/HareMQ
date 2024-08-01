@@ -413,6 +413,7 @@ class Message_Payload final :
 
   enum : int {
     kBodyFieldNumber = 2,
+    kValidFieldNumber = 3,
     kPropertiesFieldNumber = 1,
   };
   // string body = 2;
@@ -427,6 +428,20 @@ class Message_Payload final :
   const std::string& _internal_body() const;
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(const std::string& value);
   std::string* _internal_mutable_body();
+  public:
+
+  // string valid = 3;
+  void clear_valid();
+  const std::string& valid() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_valid(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_valid();
+  PROTOBUF_NODISCARD std::string* release_valid();
+  void set_allocated_valid(std::string* valid);
+  private:
+  const std::string& _internal_valid() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_valid(const std::string& value);
+  std::string* _internal_mutable_valid();
   public:
 
   // .hare_mq.BasicProperties properties = 1;
@@ -455,6 +470,7 @@ class Message_Payload final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr body_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr valid_;
   ::hare_mq::BasicProperties* properties_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_msg_2eproto;
@@ -582,25 +598,10 @@ class Message final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kValidFieldNumber = 4,
     kPayloadFieldNumber = 1,
     kOffsetFieldNumber = 2,
     kLengthFieldNumber = 3,
   };
-  // string valid = 4;
-  void clear_valid();
-  const std::string& valid() const;
-  template <typename ArgT0 = const std::string&, typename... ArgT>
-  void set_valid(ArgT0&& arg0, ArgT... args);
-  std::string* mutable_valid();
-  PROTOBUF_NODISCARD std::string* release_valid();
-  void set_allocated_valid(std::string* valid);
-  private:
-  const std::string& _internal_valid() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_valid(const std::string& value);
-  std::string* _internal_mutable_valid();
-  public:
-
   // .hare_mq.Message.Payload payload = 1;
   bool has_payload() const;
   private:
@@ -644,7 +645,6 @@ class Message final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr valid_;
   ::hare_mq::Message_Payload* payload_;
   uint32_t offset_;
   uint32_t length_;
@@ -926,6 +926,56 @@ inline void Message_Payload::set_allocated_body(std::string* body) {
   // @@protoc_insertion_point(field_set_allocated:hare_mq.Message.Payload.body)
 }
 
+// string valid = 3;
+inline void Message_Payload::clear_valid() {
+  valid_.ClearToEmpty();
+}
+inline const std::string& Message_Payload::valid() const {
+  // @@protoc_insertion_point(field_get:hare_mq.Message.Payload.valid)
+  return _internal_valid();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void Message_Payload::set_valid(ArgT0&& arg0, ArgT... args) {
+ 
+ valid_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:hare_mq.Message.Payload.valid)
+}
+inline std::string* Message_Payload::mutable_valid() {
+  std::string* _s = _internal_mutable_valid();
+  // @@protoc_insertion_point(field_mutable:hare_mq.Message.Payload.valid)
+  return _s;
+}
+inline const std::string& Message_Payload::_internal_valid() const {
+  return valid_.Get();
+}
+inline void Message_Payload::_internal_set_valid(const std::string& value) {
+  
+  valid_.Set(value, GetArenaForAllocation());
+}
+inline std::string* Message_Payload::_internal_mutable_valid() {
+  
+  return valid_.Mutable(GetArenaForAllocation());
+}
+inline std::string* Message_Payload::release_valid() {
+  // @@protoc_insertion_point(field_release:hare_mq.Message.Payload.valid)
+  return valid_.Release();
+}
+inline void Message_Payload::set_allocated_valid(std::string* valid) {
+  if (valid != nullptr) {
+    
+  } else {
+    
+  }
+  valid_.SetAllocated(valid, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (valid_.IsDefault()) {
+    valid_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:hare_mq.Message.Payload.valid)
+}
+
 // -------------------------------------------------------------------
 
 // Message
@@ -1058,56 +1108,6 @@ inline void Message::_internal_set_length(uint32_t value) {
 inline void Message::set_length(uint32_t value) {
   _internal_set_length(value);
   // @@protoc_insertion_point(field_set:hare_mq.Message.length)
-}
-
-// string valid = 4;
-inline void Message::clear_valid() {
-  valid_.ClearToEmpty();
-}
-inline const std::string& Message::valid() const {
-  // @@protoc_insertion_point(field_get:hare_mq.Message.valid)
-  return _internal_valid();
-}
-template <typename ArgT0, typename... ArgT>
-inline PROTOBUF_ALWAYS_INLINE
-void Message::set_valid(ArgT0&& arg0, ArgT... args) {
- 
- valid_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:hare_mq.Message.valid)
-}
-inline std::string* Message::mutable_valid() {
-  std::string* _s = _internal_mutable_valid();
-  // @@protoc_insertion_point(field_mutable:hare_mq.Message.valid)
-  return _s;
-}
-inline const std::string& Message::_internal_valid() const {
-  return valid_.Get();
-}
-inline void Message::_internal_set_valid(const std::string& value) {
-  
-  valid_.Set(value, GetArenaForAllocation());
-}
-inline std::string* Message::_internal_mutable_valid() {
-  
-  return valid_.Mutable(GetArenaForAllocation());
-}
-inline std::string* Message::release_valid() {
-  // @@protoc_insertion_point(field_release:hare_mq.Message.valid)
-  return valid_.Release();
-}
-inline void Message::set_allocated_valid(std::string* valid) {
-  if (valid != nullptr) {
-    
-  } else {
-    
-  }
-  valid_.SetAllocated(valid, GetArenaForAllocation());
-#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (valid_.IsDefault()) {
-    valid_.Set("", GetArenaForAllocation());
-  }
-#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:hare_mq.Message.valid)
 }
 
 #ifdef __GNUC__
