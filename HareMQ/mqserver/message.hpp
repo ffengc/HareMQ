@@ -21,6 +21,7 @@ namespace hare_mq {
 #define DATAFILE_SUBFIX ".mqd"
 #define TMPFILE_SUBFIX ".mqd.tmp" // 定义持久化文件和临时文件的文件名后缀
 using message_ptr = std::shared_ptr<Message>;
+/* 持久化管理 */
 class message_mapper {
 private:
     std::string __queue_name; // 队列名
@@ -39,6 +40,7 @@ public:
             LOG(FATAL) << "message_mapper()->create_dir(): " << dir << " failed" << std::endl;
             abort();
         }
+        create_msg_file();
     }
     bool create_msg_file() {
         if (!file_helper::create(__data_file)) {
@@ -144,6 +146,278 @@ private:
         return true;
     }
 };
+
+/* 队列管理（上面是持久化，这里是内存的）*/
+class queue_message {
+private:
+    std::mutex __mtx;
+    std::string __queue_name; // 队列名称
+    size_t __valid_count; // 有效消息数量
+    size_t __total_count; // 总共消息数量
+    message_mapper __mapper; // 持久化的句柄
+    std::list<message_ptr> __msgs; // 待推送的消息
+    std::unordered_map<std::string, message_ptr> __durable_msgs; // 待持久化的消息
+    std::unordered_map<std::string, message_ptr> __wait_ack_msgs; // 待确认的消息
+public:
+    using ptr = std::shared_ptr<queue_message>;
+    queue_message(const std::string& base_dir, const std::string& qname)
+        : __mapper(base_dir, qname)
+        , __queue_name(qname)
+        , __valid_count(0)
+        , __total_count(0) { }
+    bool recovery() {
+        // 恢复历史消息
+        std::unique_lock<std::mutex> lock(__mtx);
+        __msgs = __mapper.gc();
+        for (auto& msg : __msgs) {
+            __durable_msgs.insert({ msg->payload().properties().id(), msg });
+        }
+        __valid_count = __total_count = __msgs.size();
+    }
+    bool insert(const BasicProperties* bp, const std::string& body, DeliveryMode delivery_mode) {
+        /* DeliveryMode delivery_mode: 如果上层设置了bp, 则按照bp的去设置，否则按照delivery_mode的去设置*/
+        // 1. 构造消息对象
+        message_ptr msg = std::make_shared<Message>();
+        msg->mutable_payload()->set_body(body);
+        if (bp != nullptr) {
+            msg->mutable_payload()->mutable_properties()->set_id(bp->id());
+            msg->mutable_payload()->mutable_properties()->set_delivery_mode(bp->delivery_mode());
+            msg->mutable_payload()->mutable_properties()->set_routing_key(bp->routing_key());
+        } else {
+            msg->mutable_payload()->mutable_properties()->set_id(uuid_helper::uuid());
+            msg->mutable_payload()->mutable_properties()->set_delivery_mode(delivery_mode);
+            msg->mutable_payload()->mutable_properties()->set_routing_key("");
+        }
+        std::unique_lock<std::mutex> lock(__mtx); // lock
+        // 2. 判断是否需要持久化
+        if (msg->payload().properties().delivery_mode() == DeliveryMode::DURABLE) {
+            // 需要持久化
+            msg->mutable_payload()->set_valid("1"); // 在持久化存储中表示数据有效
+            // 这个valid字段也就是持久化才有用，如果不需要持久化，就没用了
+            // 3. (持久化)
+            bool ret = __mapper.insert(msg);
+            if (ret == false) {
+                LOG(ERROR) << "durable storage failed: " << body.c_str() << std::endl;
+                return false;
+            }
+            __valid_count += 1; // 持久化信息的量+1
+            __total_count += 1;
+            __durable_msgs.insert({ msg->payload().properties().id(), msg });
+        }
+        // 4. 内存的管理
+        __msgs.push_back(msg);
+    }
+    bool remove(const std::string& msg_id) {
+        std::unique_lock<std::mutex> lock(__mtx); // lock
+        // 1. 从待确认队列中查找消息
+        auto it = __wait_ack_msgs.find(msg_id);
+        if (it == __wait_ack_msgs.end()) // 没找到这条消息
+            return true;
+        // 2. 根据消息的持久化模式，决定是否删除持久化消息
+        if (it->second->payload().properties().delivery_mode() == DeliveryMode::DURABLE) {
+            // 3. 删除持久化信息
+            __mapper.remove(it->second);
+            // 4. 删除内存中的信息
+            __durable_msgs.erase(msg_id);
+            __valid_count -= 1; // 持久化文件有效数量-=1
+            // 判断是否需要垃圾回收
+            this->gc(); // 内部会判断是否需要垃圾回收的
+        }
+        __wait_ack_msgs.erase(msg_id);
+
+    } // ack, 每次remove后要去检查是否需要gc
+    message_ptr front() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        // 从mesg中取出数据
+        message_ptr msg = __msgs.front();
+        __msgs.pop_front();
+        // 将这个消息，向代确认的hashmap中放进去
+        __wait_ack_msgs.insert({ msg->payload().properties().id(), msg });
+        return msg;
+    } // 获取队首消息
+    size_t getable_count() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        return __msgs.size();
+    }
+    size_t total_count() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        return __total_count;
+    }
+    size_t durable_count() {
+        return __durable_msgs.size();
+    }
+    size_t wait_ack_count() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        return __wait_ack_msgs.size();
+    }
+    void clear() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        __mapper.remove_msg_file();
+        __msgs.clear();
+        __durable_msgs.clear();
+        __wait_ack_msgs.clear();
+        __valid_count = __total_count = 0;
+    }
+
+private:
+    bool gc_check() {
+        // 判断当前状态是否需要进行垃圾回收
+        // 持久化消息总量 > 2000 且其中有效比例 <50% 的时候进行垃圾回收
+        if ((__total_count > 2000) && (__valid_count * 1.0 / __total_count < 0.5))
+            return true;
+        return false;
+    }
+    bool gc() {
+        // 进行垃圾回收，获取有效的消息链表
+        if (gc_check() == false)
+            return;
+        auto new_valid_msgs = __mapper.gc();
+        assert(new_valid_msgs.size() == __valid_count); // for debug
+        // 更新每一条消息的实际存储位置
+        for (auto& m : new_valid_msgs) {
+            auto it = __durable_msgs.find(m->payload().properties().id());
+            if (it == __durable_msgs.end()) {
+                // 不应该出现这种情况，__durable_msgs里面的消息和new_valid_msgs的消息应该是相同的，都是有效消息
+                LOG(ERROR) << "a msg after gc missed" << std::endl;
+                __msgs.push_back(m); // 丢到消息的内存管理中去
+                __durable_msgs.insert({ m->payload().properties().id(), m });
+                continue;
+            }
+            // 更新每一条消息的实际存储位置
+            it->second->set_offset(m->offset());
+            it->second->set_length(m->length());
+        }
+        // 更新当前的有效消息数量 & 总的持久化消息数量
+        __valid_count = __total_count = new_valid_msgs.size();
+    } // 垃圾回收之后，更新map
+};
+
+class message_manager {
+private:
+    std::mutex __mtx;
+    std::string __base_dir;
+    std::unordered_map<std::string, queue_message::ptr> __queue_msgs;
+
+public:
+    message_manager(const std::string& base_dir)
+        : __base_dir(base_dir) { }
+    void init_queue_msg(const std::string& qname) {
+        queue_message::ptr qmp;
+        { // lock
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it != __queue_msgs.end())
+                return;
+            qmp = std::make_shared<queue_message>(__base_dir, qname);
+            __queue_msgs.insert(std::make_pair(qname, qmp));
+        }
+        qmp->recovery(); // no lock
+    } // 创建队列
+    void destroy_queue_msg(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) // 没找到这个队列，直接返回
+                return;
+            qmp = it->second;
+            __queue_msgs.erase(it);
+        }
+        qmp->clear();
+    } // 销毁队列
+    bool insert(const std::string& qname, BasicProperties* bp, const std::string& body, DeliveryMode mode) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "insert msg failed, no this queue: " << qname << std::endl;
+                return false;
+            }
+            qmp = it->second;
+        }
+        return qmp->insert(bp, body, mode);
+    } // 向 qname 插入一个消息
+    message_ptr front(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "get queue front failed, no this queue: " << qname << std::endl;
+                return;
+            }
+            qmp = it->second;
+        }
+        return qmp->front();
+    } // 获取 qname 这个队列的队首消息
+    void ack(const std::string& qname, const std::string msg_id) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "ack mesg failed, no this queue: " << qname << std::endl;
+                return;
+            }
+            qmp = it->second;
+        }
+        qmp->remove(msg_id); // 确认就是删除
+    } // 对 qname 中的 msg_id 进行确认
+    size_t getable_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in getable_count(), no this queue: " << qname << std::endl;
+                return;
+            }
+            qmp = it->second;
+        }
+        return qmp->getable_count();
+    }
+    size_t total_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in total_count(), no this queue: " << qname << std::endl;
+                return;
+            }
+            qmp = it->second;
+        }
+        return qmp->total_count();
+    }
+    size_t durable_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in durable_count(), no this queue: " << qname << std::endl;
+                return;
+            }
+            qmp = it->second;
+        }
+        return qmp->durable_count();
+    }
+    size_t wait_ack_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in wait_ack_count(), no this queue: " << qname << std::endl;
+                return;
+            }
+            qmp = it->second;
+        }
+        return qmp->wait_ack_count();
+    }
+};
+
 } // namespace hare_mq
 
 #endif
