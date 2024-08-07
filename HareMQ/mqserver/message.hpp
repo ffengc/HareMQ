@@ -35,14 +35,18 @@ public:
             dir.push_back('/');
         __data_file = dir + qname + DATAFILE_SUBFIX;
         __tmp_file = dir + qname + TMPFILE_SUBFIX;
-        if (!file_helper::create_dir(dir)) {
-            // 先把这个目录创建出来
-            LOG(FATAL) << "message_mapper()->create_dir(): " << dir << " failed" << std::endl;
-            abort();
+        if (file_helper(dir).exists() == false) { // 不存在才创建
+            if (!file_helper::create_dir(dir)) {
+                // 先把这个目录创建出来
+                LOG(FATAL) << "message_mapper()->create_dir(): " << dir << " failed" << std::endl;
+                abort();
+            }
         }
-        create_msg_file();
+        create_msg_file(); // 这个要放外面，如果放里面就不对了，有可能有目录但没文件的情况下，就没有被调用了
     }
     bool create_msg_file() {
+        if (file_helper(__data_file).exists() == true)
+            return true;
         if (!file_helper::create(__data_file)) {
             LOG(ERROR) << "create data_file: " << __data_file << " failed" << std::endl;
             return false;
@@ -81,11 +85,14 @@ public:
             LOG(WARNING) << "load valid origin data failed" << std::endl;
             return result_lst;
         }
+        // LOG(DEBUG) << "gc get mesg size: " << result_lst.size() << std::endl; 
         // 2. 将有效数据进行序列化，然后存储到临时文件中
+        file_helper::create(__tmp_file);
         for (auto& msg : result_lst) {
             if (!__insert(__tmp_file, msg))
                 return result_lst;
         }
+        // LOG(DEBUG) << "(for debug) file size: " << file_helper(__tmp_file).size() << std::endl;
         // 3. 删除原文件
         if (!file_helper::remove(__data_file)) {
             LOG(WARNING) << "remove origin datafile: " << __data_file << " failed" << std::endl;
@@ -108,12 +115,12 @@ private:
         size_t fsize = data_file_helper.size();
         while (offset < fsize) {
             // 先读取4字节的长度
-            if (!data_file_helper.read((char*)&msg_size, offset, 4)) {
+            if (!data_file_helper.read((char*)&msg_size, offset, sizeof(size_t))) {
                 // 读取长度存到一个size_t里面去
                 LOG(WARNING) << "read msg length fail!" << std::endl;
                 return false;
             }
-            offset += 4;
+            offset += sizeof(size_t);
             std::string msg_body(msg_size, '\0');
             if (!data_file_helper.read(&msg_body[0], offset, msg_size)) {
                 LOG(WARNING) << "read msg fail!" << std::endl;
@@ -121,11 +128,12 @@ private:
             }
             offset += msg_size;
             message_ptr msgp = std::make_shared<Message>();
-            msgp->ParseFromString(msg_body);
+            msgp->mutable_payload()->ParseFromString(msg_body); // find a bug
             if (msgp->payload().valid() == "0")
                 continue;
             lst.push_back(msgp); // 如果是无效消息就处理下一个，如果是有效的，就保存起来
         }
+        return true;
     }
     bool __insert(const std::string file_name, message_ptr& msg) {
         // 新增数据都是添加到文件末尾的
@@ -134,14 +142,20 @@ private:
         // 2. 获取文件的长度
         file_helper helper(file_name);
         size_t fsize = helper.size();
-        // 3. 将数据写入文件的指定位置
-        bool ret = helper.write(body.c_str(), fsize, body.size());
+        // 3. 将数据写入文件的指定位置, 先写内容长度(size_t), 再写入内容
+        size_t msg_size = body.size();
+        bool ret = helper.write((char*)&msg_size, fsize, sizeof(size_t));
+        if (ret == false) {
+            LOG(ERROR) << "write data length to " << file_name << " failed" << std::endl;
+            return false;
+        }
+        ret = helper.write(body.c_str(), fsize + sizeof(size_t), body.size());
         if (ret == false) {
             LOG(ERROR) << "write data to " << file_name << " failed" << std::endl;
             return false;
         }
         // 4. 更新msg中的实际存储信息
-        msg->set_offset(fsize);
+        msg->set_offset(fsize + sizeof(size_t));
         msg->set_length(body.size());
         return true;
     }
@@ -173,6 +187,7 @@ public:
             __durable_msgs.insert({ msg->payload().properties().id(), msg });
         }
         __valid_count = __total_count = __msgs.size();
+        return true;
     }
     bool insert(const BasicProperties* bp, const std::string& body, DeliveryMode delivery_mode) {
         /* DeliveryMode delivery_mode: 如果上层设置了bp, 则按照bp的去设置，否则按照delivery_mode的去设置*/
@@ -206,6 +221,7 @@ public:
         }
         // 4. 内存的管理
         __msgs.push_back(msg);
+        return true;
     }
     bool remove(const std::string& msg_id) {
         std::unique_lock<std::mutex> lock(__mtx); // lock
@@ -224,10 +240,12 @@ public:
             this->gc(); // 内部会判断是否需要垃圾回收的
         }
         __wait_ack_msgs.erase(msg_id);
-
+        return true;
     } // ack, 每次remove后要去检查是否需要gc
     message_ptr front() {
         std::unique_lock<std::mutex> lock(__mtx);
+        if (__msgs.size() == 0)
+            return message_ptr();
         // 从mesg中取出数据
         message_ptr msg = __msgs.front();
         __msgs.pop_front();
@@ -267,7 +285,7 @@ private:
             return true;
         return false;
     }
-    bool gc() {
+    void gc() {
         // 进行垃圾回收，获取有效的消息链表
         if (gc_check() == false)
             return;
@@ -296,9 +314,9 @@ class message_manager {
 private:
     std::mutex __mtx;
     std::string __base_dir;
-    std::unordered_map<std::string, queue_message::ptr> __queue_msgs;
-
+    std::unordered_map<std::string, queue_message::ptr> __queue_msgs; //  map
 public:
+    using ptr = std::shared_ptr<message_manager>;
     message_manager(const std::string& base_dir)
         : __base_dir(base_dir) { }
     void init_queue_msg(const std::string& qname) {
@@ -345,7 +363,7 @@ public:
             auto it = __queue_msgs.find(qname);
             if (it == __queue_msgs.end()) {
                 LOG(ERROR) << "get queue front failed, no this queue: " << qname << std::endl;
-                return;
+                return message_ptr();
             }
             qmp = it->second;
         }
@@ -371,7 +389,7 @@ public:
             auto it = __queue_msgs.find(qname);
             if (it == __queue_msgs.end()) {
                 LOG(ERROR) << "error in getable_count(), no this queue: " << qname << std::endl;
-                return;
+                return 0;
             }
             qmp = it->second;
         }
@@ -384,7 +402,7 @@ public:
             auto it = __queue_msgs.find(qname);
             if (it == __queue_msgs.end()) {
                 LOG(ERROR) << "error in total_count(), no this queue: " << qname << std::endl;
-                return;
+                return 0;
             }
             qmp = it->second;
         }
@@ -397,7 +415,7 @@ public:
             auto it = __queue_msgs.find(qname);
             if (it == __queue_msgs.end()) {
                 LOG(ERROR) << "error in durable_count(), no this queue: " << qname << std::endl;
-                return;
+                return 0;
             }
             qmp = it->second;
         }
@@ -410,11 +428,16 @@ public:
             auto it = __queue_msgs.find(qname);
             if (it == __queue_msgs.end()) {
                 LOG(ERROR) << "error in wait_ack_count(), no this queue: " << qname << std::endl;
-                return;
+                return 0;
             }
             qmp = it->second;
         }
         return qmp->wait_ack_count();
+    }
+    void clear() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        for (auto& q : __queue_msgs)
+            q.second->clear();
     }
 };
 
