@@ -166,7 +166,7 @@ public:
         : __mapper(dbfile) {
         __exchanges = __mapper.all(); // 直接获取所有的交换机（恢复历史数据）
     }
-    void declare_exchange(const std::string& name,
+    bool declare_exchange(const std::string& name,
         ExchangeType type,
         bool durable,
         bool auto_delete,
@@ -175,11 +175,12 @@ public:
         std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
         auto it = __exchanges.find(name);
         if (it != __exchanges.end()) // 如果交换机已经存在，不需要重复新增
-            return;
+            return true;
         auto exp = std::make_shared<exchange>(name, type, durable, auto_delete, args);
         if (durable == true)
             __mapper.insert(exp);
         __exchanges.insert({ name, exp });
+        return true;
     }
     void delete_exchange(const std::string& name) {
         // 删除交换机

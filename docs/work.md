@@ -24,6 +24,7 @@
     - [消息持久化的实现](#消息持久化的实现)
     - [消息在内存中的管理](#消息在内存中的管理)
     - [对外的总体消息管理类](#对外的总体消息管理类)
+  - [虚拟机操作模块](#虚拟机操作模块)
 
 
 ## 项目目录结构创建
@@ -657,4 +658,198 @@ public:
   - 获取队列的消息数量：可获取消息数量，持久化消息数量，待确认消息数量，总的持久化消息数量
   - 恢复队列历史消息
 
+
+```cpp
+class message_manager {
+private:
+    std::mutex __mtx;
+    std::string __base_dir;
+    std::unordered_map<std::string, queue_message::ptr> __queue_msgs; //  map
+public:
+    using ptr = std::shared_ptr<message_manager>;
+    message_manager(const std::string& base_dir)
+        : __base_dir(base_dir) { }
+    void init_queue_msg(const std::string& qname) {
+        queue_message::ptr qmp;
+        { // lock
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it != __queue_msgs.end())
+                return;
+            qmp = std::make_shared<queue_message>(__base_dir, qname);
+            __queue_msgs.insert(std::make_pair(qname, qmp));
+        }
+        qmp->recovery(); // no lock
+    } // 创建队列
+    void destroy_queue_msg(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) // 没找到这个队列，直接返回
+                return;
+            qmp = it->second;
+            __queue_msgs.erase(it);
+        }
+        qmp->clear();
+    } // 销毁队列
+    bool insert(const std::string& qname, BasicProperties* bp, const std::string& body, DeliveryMode mode) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "insert msg failed, no this queue: " << qname << std::endl;
+                return false;
+            }
+            qmp = it->second;
+        }
+        return qmp->insert(bp, body, mode);
+    } // 向 qname 插入一个消息
+    message_ptr front(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "get queue front failed, no this queue: " << qname << std::endl;
+                return message_ptr();
+            }
+            qmp = it->second;
+        }
+        return qmp->front();
+    } // 获取 qname 这个队列的队首消息
+    void ack(const std::string& qname, const std::string msg_id) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "ack mesg failed, no this queue: " << qname << std::endl;
+                return;
+            }
+            qmp = it->second;
+        }
+        qmp->remove(msg_id); // 确认就是删除
+    } // 对 qname 中的 msg_id 进行确认
+    size_t getable_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in getable_count(), no this queue: " << qname << std::endl;
+                return 0;
+            }
+            qmp = it->second;
+        }
+        return qmp->getable_count();
+    }
+    size_t total_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in total_count(), no this queue: " << qname << std::endl;
+                return 0;
+            }
+            qmp = it->second;
+        }
+        return qmp->total_count();
+    }
+    size_t durable_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in durable_count(), no this queue: " << qname << std::endl;
+                return 0;
+            }
+            qmp = it->second;
+        }
+        return qmp->durable_count();
+    }
+    size_t wait_ack_count(const std::string& qname) {
+        queue_message::ptr qmp;
+        {
+            std::unique_lock<std::mutex> lock(__mtx);
+            auto it = __queue_msgs.find(qname);
+            if (it == __queue_msgs.end()) {
+                LOG(ERROR) << "error in wait_ack_count(), no this queue: " << qname << std::endl;
+                return 0;
+            }
+            qmp = it->second;
+        }
+        return qmp->wait_ack_count();
+    }
+    void clear() {
+        std::unique_lock<std::mutex> lock(__mtx);
+        for (auto& q : __queue_msgs)
+            q.second->clear();
+    }
+};
+```
+
+## 虚拟机操作模块
+
+其实就是对前面的所有模块进行整合。让虚拟机这个操作类向更上一层提供接口。
+
+本质：虚拟机操作模块就是对前面的模块的封装
+
+**定义虚拟机类包含以下成员：**
+- 交换机数据管理句柄
+- 队列数据管理句柄
+- 绑定数据管理句柄
+- 消息数据管理句柄
+
+**虚拟机的操作：**
+- 声明交换机（若存在就不需要创建了）
+- 删除交换机（同时删除绑定信息）
+- 声明队列（若不存在则创建，创建的同时创建队列关联消息管理对象）
+- 删除队列（同时删除绑定信息）
+- 交换机-队列绑定
+- 交换机-队列解绑
+- 获取交换机相关的所有绑定信息
+- 提供新增消息的功能
+- 提供获取指定队列队首消息的功能
+
+**虚拟机管理操作：**
+- 增删查
+
+虚拟机类的结构如下所示
+```cpp
+namespace hare_mq {
+class virtual_host {
+private:
+    exchange_manager::ptr __emp;
+    msg_queue_manager::ptr __mqmp;
+    binding_manager::ptr __bmp;
+    message_manager::ptr __mmp; // 四个句柄
+public:
+    virtual_host(const std::string& basedir, const std::string& dbfile);
+    bool declare_exchange(const std::string& name,
+        ExchangeType type,
+        bool durable,
+        bool auto_delete,
+        std::unordered_map<std::string, std::string>& args); // 声明交换机
+    void delete_exchange(const std::string& name); // 删除交换机
+    bool declare_queue(const std::string& qname,
+        bool qdurable,
+        bool qexclusive,
+        bool qauto_delete,
+        const std::unordered_map<std::string, std::string>& qargs); // 声明队列
+    void delete_queue(const std::string& name); // 删除队列
+    bool bind(const std::string& ename, const std::string& qname, const std::string& key); // 绑定交换机和队列
+    void unbind(const std::string& ename, const std::string& qname); // 解除绑定交换机和队列
+    msg_queue_binding_map exchange_bindings(const std::string& ename); // 获取一台交换机的所有绑定信息
+    bool basic_publish(const std::string& qname, BasicProperties* bp, const std::string& body, DeliveryMode mode); // 发布一条消息
+    message_ptr basic_consume(const std::string& qname); // 消费一条消息
+    bool basic_ack(const std::string& qname, const std::string& msgid); // 确认一条消息
+};
+} // namespace hare_mq
+```
+
+实现后的代码如代码所示。
 

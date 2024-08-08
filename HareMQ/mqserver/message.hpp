@@ -85,7 +85,7 @@ public:
             LOG(WARNING) << "load valid origin data failed" << std::endl;
             return result_lst;
         }
-        // LOG(DEBUG) << "gc get mesg size: " << result_lst.size() << std::endl; 
+        // LOG(DEBUG) << "gc get mesg size: " << result_lst.size() << std::endl;
         // 2. 将有效数据进行序列化，然后存储到临时文件中
         file_helper::create(__tmp_file);
         for (auto& msg : result_lst) {
@@ -189,18 +189,20 @@ public:
         __valid_count = __total_count = __msgs.size();
         return true;
     }
-    bool insert(const BasicProperties* bp, const std::string& body, DeliveryMode delivery_mode) {
+    bool insert(const BasicProperties* bp, const std::string& body, bool queue_durable) {
         /* DeliveryMode delivery_mode: 如果上层设置了bp, 则按照bp的去设置，否则按照delivery_mode的去设置*/
         // 1. 构造消息对象
         message_ptr msg = std::make_shared<Message>();
         msg->mutable_payload()->set_body(body);
         if (bp != nullptr) {
+            DeliveryMode mode = queue_durable ? bp->delivery_mode() : DeliveryMode::UNDURABLE;
             msg->mutable_payload()->mutable_properties()->set_id(bp->id());
-            msg->mutable_payload()->mutable_properties()->set_delivery_mode(bp->delivery_mode());
+            msg->mutable_payload()->mutable_properties()->set_delivery_mode(mode);
             msg->mutable_payload()->mutable_properties()->set_routing_key(bp->routing_key());
         } else {
+            DeliveryMode mode = queue_durable ? DeliveryMode::DURABLE : DeliveryMode::UNDURABLE;
             msg->mutable_payload()->mutable_properties()->set_id(uuid_helper::uuid());
-            msg->mutable_payload()->mutable_properties()->set_delivery_mode(delivery_mode);
+            msg->mutable_payload()->mutable_properties()->set_delivery_mode(mode);
             msg->mutable_payload()->mutable_properties()->set_routing_key("");
         }
         std::unique_lock<std::mutex> lock(__mtx); // lock
@@ -343,7 +345,7 @@ public:
         }
         qmp->clear();
     } // 销毁队列
-    bool insert(const std::string& qname, BasicProperties* bp, const std::string& body, DeliveryMode mode) {
+    bool insert(const std::string& qname, BasicProperties* bp, const std::string& body, bool queue_durable) {
         queue_message::ptr qmp;
         {
             std::unique_lock<std::mutex> lock(__mtx);
@@ -354,7 +356,7 @@ public:
             }
             qmp = it->second;
         }
-        return qmp->insert(bp, body, mode);
+        return qmp->insert(bp, body, queue_durable);
     } // 向 qname 插入一个消息
     message_ptr front(const std::string& qname) {
         queue_message::ptr qmp;
