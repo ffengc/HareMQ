@@ -1,4 +1,4 @@
-test: route_test.cc ../mqcommon/*.cc
+test: consumer_test.cc ../mqcommon/*.cc
 	g++ -o $@ $^ -std=c++11 -g -lgtest -lprotobuf -lsqlite3
 .PHONY:clean
 clean:
