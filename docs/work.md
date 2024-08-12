@@ -29,7 +29,10 @@
     - [基本概念](#基本概念)
     - [`binding_key` 和 `routing_key` 的规则](#binding_key-和-routing_key-的规则)
     - [如何匹配](#如何匹配)
-    - [代码搭建](#代码搭建)
+  - [消费模块/订阅模块](#消费模块订阅模块)
+    - [消费者信息结构](#消费者信息结构)
+    - [消费者管理（以队列为单元进行管理-队列消费者管理结构）](#消费者管理以队列为单元进行管理-队列消费者管理结构)
+    - [对消费者进行统一管理结构](#对消费者进行统一管理结构)
 
 
 ## 项目目录结构创建
@@ -893,5 +896,122 @@ public:
 
 方法: 动态规划
 
-### 代码搭建
+这里的逻辑比较复杂。
 
+**整体思路和 LeetCode 里面的这一题非常相像: [https://leetcode.cn/problems/wildcard-matching/description/](https://leetcode.cn/problems/wildcard-matching/description/)**
+
+因此这里不重复解释原理了，具体直接见代码。
+
+```cpp
+    static bool __dp_matching(const std::string& routing_key, const std::string& binding_key) {
+        // 1. 将binding_key与routing_key进行字符串分割，得到各个的单词数组
+        std::vector<std::string> bkeys, rkeys;
+        int n_bkey = string_helper::split(binding_key, ".", &bkeys);
+        int n_rkey = string_helper::split(binding_key, ".", &rkeys);
+        // 2. 定义标记数组，并初始化[0][0]位置为true，其他位置为false
+        std::vector<std::vector<bool>> dp(n_bkey + 1, std::vector<bool>(n_rkey + 1, false));
+        dp[0][0] = true;
+        // 3. 如果binding_key以#起始，则将#对应行的第0位置置为1
+        for (int i = 1; i <= bkeys.size(); ++i) {
+            if (bkeys[i - 1] == "#") {
+                dp[i][0] = true;
+                continue;
+            }
+            break;
+        }
+        // 4. 使用routing_key中的每个单词与binding_key中的每个单词进行匹配并标记数组
+        for (int i = 1; i <= n_bkey; i++) {
+            for (int j = 1; j <= n_rkey; j++) {
+                // 如果当前 bkey 是单词或者 * ，或者两个单词相同，表示单词匹配成功，从左上方继承结果
+                if (bkeys[i - 1] == rkeys[j - 1] || bkeys[i - 1] == "*")
+                    dp[i][j] = dp[i - 1][j - 1];
+                // 如果当前 bkye 是 # , 则需要从左上，左边，上边继承结果
+                else if (bkeys[i - 1] == "#")
+                    dp[i][j] = dp[i - 1][j - 1] || dp[i][j - 1] || dp[i - 1][j];
+            }
+        }
+        return dp[n_bkey][n_rkey];
+    }
+```
+
+## 消费模块/订阅模块
+
+![](./work-assets/8.png)
+
+客户端这边每当发起一个订阅请求，意味着服务器这边就多了一个订阅者(处理消息的客户端描述)，而户想要订阅哪一个队这个消费者或者说订阅者它是和队列直接关联的，因为订阅请求中会描述当前列的消息。
+
+而一个信道关闭的时候，或者队列被删除的时候，那么这个信道或队列关联的消费者也就没有存在的息给删除掉。意义了，因此也需要将相关的消费者信息给删除掉。
+
+### 消费者信息结构
+
+1. 消费者标识
+2. 订阅的队列名称
+3. 一个消息的处理回调函数（实现的是当发布一条消息到队列，则选择消费者进行消费，如何消费？对于服务端来说就是调用这个回调函数进行处理，其内部逻辑就是找到消费者对应的连接，然后将数据发送给消费者对应的客户端。
+4. 是否自动应答标志（一个消息被消费者消费之后，如果自动应答，则直接移除待确认消息，否则等待客户确认）
+
+### 消费者管理（以队列为单元进行管理-队列消费者管理结构）
+
+操作：
+1. 新增消费者：信道提供的服务是订阅队列信息的时候创建
+2. 删除消费者：取消订阅/信道关闭/连接关闭的时候删除
+3. 获取消费者：从队列所有的消费者中按序取出一个消费者进行消息的推送
+4. 判断队列消费者是否为空
+5. 判断指定消费者是否存在
+6. 清理队列所有消费者
+
+元素：
+1. 消费者管理结构：`vector`
+2. 轮转序号：一个队列可能会有多个消费者，但是一条消息只需要被一个消费者消费即可，因此采用RR轮转
+3. 互斥锁：保证线程安全
+4. 队列名称
+
+### 对消费者进行统一管理结构
+
+1. 初始化/删除队列的消费者信息结构（创建/删除队列的时候初始化）
+2. 向指定队列新增消费者（客户端订阅指定队列消息的时候）：新增完成的时候返回消费者对象
+3. 从指定队列移除消费者（客户端取消订阅的时候）
+4. 移除指定队列的所有消费者（队列被删除的时销毁）：删除消费者的队列管理单元对象
+5. 从指定队列获取一个消费者（轮训查询-消费者轮换消费起到负载均衡的作用）
+6. 判断队列中消费者是否为空
+7. 判断队列中指定消费者是否存在
+8. 清理所有消费者
+
+
+架子如下所示：
+
+
+```cpp
+namespace hare_mq {
+using consumer_callback = std::function<void(const std::string& tag, const BasicProperties*, const std::string)>;
+struct consumer {
+    using ptr = std::shared_ptr<consumer>;
+    std::string tag; // 消费者标识
+    std::string qname; // 订阅的队列名称
+    bool auto_ack; // 自动确认标志
+    consumer_callback callback; // 回调
+    consumer() { }
+    consumer(const std::string& ctag, const std::string& queue_name, bool ack_flag, consumer_callback& cb)
+        : tag(ctag)
+        , qname(queue_name)
+        , auto_ack(ack_flag)
+        , callback(cb) { }
+};
+
+/* 以队列为单元的消费者结构 */
+class queue_consumer {
+private:
+    std::string __qname;
+    std::mutex __mtx;
+    uint64_t __rr_seq; // 轮转序号
+    std::vector<consumer::ptr> __consumers; // 管理的所有消费者对象
+public:
+    queue_consumer(const std::string& qname);
+    consumer::ptr create(const std::string& ctag, const std::string& queue_name, bool ack_flag, consumer_callback& cb); // 创建消费者
+    void remove(const std::string& ctag);
+    consumer::ptr choose();
+    bool empty();
+    bool exists(const std::string& ctag);
+    void clear();
+};
+} // namespace hare_mq
+```
