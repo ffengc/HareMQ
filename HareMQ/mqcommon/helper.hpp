@@ -12,6 +12,7 @@
 #include <boost/algorithm/string.hpp>
 #include <errno.h>
 #include <fstream>
+#include <google/protobuf/map.h>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -20,6 +21,7 @@
 #include <string.h>
 #include <string>
 #include <sys/stat.h>
+#include <unordered_map>
 #include <vector>
 
 namespace hare_mq {
@@ -234,6 +236,23 @@ public:
     }
 };
 
+class map_helper {
+public:
+    static std::unordered_map<std::string, std::string> ConvertProtoMapToStdMap(const google::protobuf::Map<std::string, std::string>& proto_map) {
+        std::unordered_map<std::string, std::string> std_map;
+        for (const auto& kv : proto_map) {
+            std_map[kv.first] = kv.second;
+        }
+        return std_map;
+    }
+    static google::protobuf::Map<std::string, std::string> ConvertStdMapToProtoMap(const std::unordered_map<std::string, std::string>& std_map) {
+        google::protobuf::Map<std::string, std::string> proto_map;
+        for (const auto& kv : std_map) {
+            proto_map[kv.first] = kv.second;
+        }
+        return proto_map;
+    }
+};
 } // namespace hare_mq
 
 #endif
