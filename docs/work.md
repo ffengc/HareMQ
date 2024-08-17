@@ -33,7 +33,15 @@
     - [消费者信息结构](#消费者信息结构)
     - [消费者管理（以队列为单元进行管理-队列消费者管理结构）](#消费者管理以队列为单元进行管理-队列消费者管理结构)
     - [对消费者进行统一管理结构](#对消费者进行统一管理结构)
-  - [信道管理模块](#信道管理模块)
+  - [信道管理模块（上）](#信道管理模块上)
+    - [基本概念](#基本概念-1)
+    - [网络通信协议设计（设计服务端的网络接口）](#网络通信协议设计设计服务端的网络接口)
+      - [需求分析](#需求分析)
+      - [应用层协议设计](#应用层协议设计)
+      - [定义请求/响应参数](#定义请求响应参数)
+  - [重新梳理整个服务器的调用逻辑‼️](#重新梳理整个服务器的调用逻辑️)
+  - [信道管理模块（下）](#信道管理模块下)
+    - [`map`类型的冲突问题](#map类型的冲突问题)
 
 
 ## 项目目录结构创建
@@ -1017,7 +1025,9 @@ public:
 } // namespace hare_mq
 ```
 
-## 信道管理模块
+## 信道管理模块（上）
+
+### 基本概念
 
 在 AMQP模型中，除了通信连接的 `Connection` 概念外，还有一个 `Channel` 的概念，`Channel` 是针对于 `Connection` 连接的一个更细粒度的通信通道，多个 `Channel` 可以使用同一个通信连接 `Connection` 进行通信，但是同一个 `Connection` 的 `Channel` 之间相互独立。
 
@@ -1039,4 +1049,317 @@ public:
 
 **信道管理：**
 信道的增删查
+
+**搭建好的框架如下所示。**
+
+```cpp
+namespace hare_mq {
+class channel {
+public:
+    using ProtobufCodecPtr = std::shared_ptr<ProtobufCodec>; //
+private:
+    std::string __cid; // 信道标识
+    consumer::ptr __consumer; // 在haremq中一个信道对应一个消费者，不一定有效，因为信道不一定是消费者关联的
+    muduo::net::TcpConnectionPtr __conn; // 连接句柄
+    ProtobufCodecPtr __codec; // 协议处理
+    consumer_manager::ptr __cmp; // 消费者管理句柄
+    virtual_host::ptr __host; // 虚拟机对象管理句柄
+public:
+    channel(const std::string& cid,
+        const virtual_host::ptr& host,
+        const consumer_manager::ptr& cmp,
+        const ProtobufCodecPtr& codec,
+        const muduo::net::TcpConnectionPtr conn) { }
+    ~channel();
+    // 交换机的声明和删除
+    void declare_exchange();
+    void delete_exchange(); 
+    // 队列的声明和删除
+    void declare_queue();
+    void delete_queue();
+    // 队列的绑定与解除绑定
+    void bind();
+    void unbind();
+    // 消息的发布和确认
+    void basic_publish();
+    void basic_ack();
+    // 订阅/取消订阅队列消息
+    void basic_consume();
+    void basic_cancel();
+};
+} // namespace hare_mq
+```
+
+
+### 网络通信协议设计（设计服务端的网络接口）
+
+#### 需求分析
+
+简单来说：就是上面实现的所有功能，需要提供网络接口，给客户端去调用（客户端可以是生产者也可以是消费者）
+
+具体通信过程采用 `Muduo` 库来实现，使用 TCP 作为通信的底层协议，同时在这个基础上自定义应用层协议，完成客户端对服务器功能的远程调用。
+
+需要提供的网络接口:
+
+- 创建/删除 `channel`
+- 创建/删除 `exchange`
+- 创建/删除 `queue`
+- 创建/删除 `binding`
+- 发送 `message`
+- 订阅 `message`
+- 发送 `ack`
+- 返回 `message`（服务器->客户端）
+
+#### 应用层协议设计
+
+这个就直接用 `Muduo` 库里，陈硕大佬已经写好的结合 `Protobuf` 方法了，报文格式如图所示。
+
+
+![](./work-assets/9.png)
+
+
+- `len`: 4个字节，表示整个报文的长度
+- `nameLen`: 4个字节，标识 `typeName` 数组的长度
+- `typeName`: 是一个字节数组，占 `nameLen` 个字节，标识请求/响应报文的类型名称，作用是分发不同的消息到对应的远程接口调用中
+- `protobufData`: 是个字节数组，占 `len-nameLen-8` 个字节，表示请求/响应参数数据通过 `protobuf` 序列化之后 的二进制
+- `checkSum`: 4个字节，表示整个消息的校验和，作用是为了校验请求/响应报文的完成性
+
+#### 定义请求/响应参数
+
+上面的参数，不只有 `ProtobufData` 需要传递，所有提到的参数都需要传递，所以需要在pb文件中定义好！
+
+```proto
+/*
+ * Write by Yufc
+ * See https://github.com/ffengc/HareMQ
+ * please cite my project link: https://github.com/ffengc/HareMQ when you use this code
+ */
+syntax = "proto3";
+package hare_mq;
+
+import "msg.proto";
+
+/* 信道的打开与关闭 */
+message openChannelRequest {
+    string rid = 1; // 请求id
+    string cid = 2; // 信道id
+};
+message closeChannelRequest {
+    string rid = 1;
+    string cid = 2;
+};
+/* 交换机的声明与删除 */
+message declareExchangeRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    ExchangeType exchange_type = 4;
+    bool durable = 5;
+    bool auto_delete = 6;
+    map<string, string> args = 7;
+};
+message deleteExchangeRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+};
+/* 队列的声明与删除 */
+message declareQueueRequest {
+    string rid = 1;
+    string cid = 2;
+    string queue_name = 3;
+    bool exclusive = 4;
+    bool durable = 5;
+    bool auto_delete = 6;
+    map<string, string> args = 7;
+};
+message deleteQueueRequest {
+    string rid = 1;
+    string cid = 2;
+    string queue_name = 3;
+};
+/* 队列的绑定与解除绑定 */
+message bindRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    string queue_name = 4;
+    string binding_key = 5;
+};
+message unbindRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    string queue_name = 4;
+};
+/* 消息的发布 */
+message basicPublishRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    string body = 4;
+    BasicProperties properties = 5;
+};
+/* 消息的确认 */
+message basicAckRequest {
+    string rid = 1;
+    string cid = 2;
+    string queue_name = 3;
+    string message_id = 4;
+};
+/* 队列的订阅 */
+message basicConsumeRequest {
+    string rid = 1;
+    string cid = 2;
+    string consumer_tag = 3;
+    string queue_name = 4;
+    bool auto_ack = 5;
+};
+/* 订阅的取消 */
+message basicCancelRequest {
+    string rid = 1;
+    string cid = 2;
+    string consumer_tag = 3;
+    string queue_name = 4;
+}
+/* 消息的推送 */
+message basicConsumeResponse {
+    string cid = 1; // 不需要rid，这个是一个响应
+    string consumer_tag = 2;
+    string body = 3;
+    BasicProperties properties = 4;
+}
+/* 通用响应 */
+message basicCommonResponse {
+    string rid = 1; // 针对rid请求的响应
+    string cid = 2;
+    bool ok = 3;
+};
+```
+
+
+## 重新梳理整个服务器的调用逻辑‼️
+
+> [!CAUTION]
+> **看懂这个，就能理解这些文件是干嘛的了！**
+
+- `exchange.hpp` 交换机相关的代码
+- `queue.hpp` 队列相关的代码
+- `binding.hpp` 绑定相关代码，把交换机和队列建立联系，交换机和队列的绑定
+- `message.hpp` 这个是消息的管理。为什么还需要消息的管理呢？前面的交换机管理，队列管理和绑定管理，其实都是消息的载体，也就是说交换机啊，队列啊，都是消息经过的地方。
+- `route.hpp` 解决了消息应该如何从交换机到队列的问题。也就是说，`binding.hpp` 只是解决了，交换机绑定队列的过程，也就是说，`binding.hpp` 只是绑定的工具，如何绑定，绑定谁，`route.hpp` 来告诉你
+- 上面的所有功能结合一起，其实就是整个 MQ 项目的核心逻辑了，把上面的的所有东西封装起来，就得到了 `virtual_host.hpp`, 这个文件里面提供的方法，就是整个 MQ 项目服务端提供的方法。
+- 此时又遇到了一个问题，如果每个socket连接都直接去调一整个 `virtual_host` 则效率非常低，因此引入 `channel.hpp` 作为一个帮手，来提高效率，本质是一样的，因此可以看到 `channel.hpp` 里面提供的方法，和 `virtual_host.hpp` 提供的方法是一样的，`channel.hpp` 就是 `host` 的助理。
+- 然后 `channel.hpp` 里面这些接口谁来调用呢？让网络接口的回调来调用！
+
+## 信道管理模块（下）
+
+定义好proto之后，我们的 `channel` 架子如下：给我请求，我帮你处理，所以参数都是请求。
+
+```cpp
+namespace hare_mq {
+class channel {
+public:
+    using ProtobufCodecPtr = std::shared_ptr<ProtobufCodec>;
+    using openChannelRequestPtr = std::shared_ptr<openChannelRequest>;
+    using closeChannelRequestPtr = std::shared_ptr<closeChannelRequest>;
+    using declareExchangeRequestPtr = std::shared_ptr<declareExchangeRequest>;
+    using deleteExchangeRequestPtr = std::shared_ptr<deleteExchangeRequest>;
+    using declareQueueRequestPtr = std::shared_ptr<declareQueueRequest>;
+    using deleteQueueRequestPtr = std::shared_ptr<deleteQueueRequest>;
+    using bindRequestPtr = std::shared_ptr<bindRequest>;
+    using unbindRequestPtr = std::shared_ptr<unbindRequest>;
+    using basicPublishRequestPtr = std::shared_ptr<basicPublishRequest>;
+    using basicAckRequestPtr = std::shared_ptr<basicAckRequest>;
+    using basicConsumeRequestPtr = std::shared_ptr<basicConsumeRequest>;
+    using basicCancelRequestPtr = std::shared_ptr<basicCancelRequest>;
+    using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>; //
+private:
+    std::string __cid; // 信道标识
+    consumer::ptr __consumer; // 在haremq中一个信道对应一个消费者，不一定有效，因为信道不一定是消费者关联的
+    muduo::net::TcpConnectionPtr __conn; // 连接句柄
+    ProtobufCodecPtr __codec; // 协议处理
+    consumer_manager::ptr __cmp; // 消费者管理句柄
+    virtual_host::ptr __host; // 虚拟机对象管理句柄
+public:
+    channel(const std::string& cid,
+        const virtual_host::ptr& host,
+        const consumer_manager::ptr& cmp,
+        const ProtobufCodecPtr& codec,
+        const muduo::net::TcpConnectionPtr conn) { }
+    ~channel();
+    // 交换机的声明和删除
+    void declare_exchange(const declareExchangeRequestPtr& req);
+    void delete_exchange(const deleteExchangeRequestPtr& req);
+    // 队列的声明和删除
+    void declare_queue(const declareQueueRequestPtr& req);
+    void delete_queue(const deleteQueueRequestPtr& req);
+    // 队列的绑定与解除绑定
+    void bind(const bindRequestPtr& req);
+    void unbind(const unbindRequestPtr& req);
+    // 消息的发布和确认
+    void basic_publish(const basicPublishRequestPtr& req);
+    void basic_ack(const basicAckRequestPtr& req);
+    // 订阅/取消订阅队列消息
+    void basic_consume(const basicConsumeRequestPtr& req);
+    void basic_cancel(const basicCancelRequestPtr& req);
+};
+} // namespace hare_mq
+```
+
+### `map`类型的冲突问题
+
+```cpp
+void declare_exchange(const declareExchangeRequestPtr& req) {
+    __host->declare_exchange(req->exchange_name(),
+        req->exchange_type(),
+        req->durable(),
+        req->auto_delete(),
+        req->args());
+}
+```
+写函数的时候遇到了问题，最后一个参数 `req->args()` 和 `unordered_map` 类型对应不上，项目指引上的解决方法是把所有的 `std::unordered_map`, 全部修改成 `google::protobuf::Map` 类型。但是因为之前的代码都经过测试了，我不想动，因此写了两种 `Map` 的相互转换函数。
+
+如下所示。
+
+
+```cpp
+class map_helper {
+public:
+    static std::unordered_map<std::string, std::string> ConvertProtoMapToStdMap(const google::protobuf::Map<std::string, std::string>& proto_map) {
+        std::unordered_map<std::string, std::string> std_map;
+        for (const auto& kv : proto_map) {
+            std_map[kv.first] = kv.second;
+        }
+        return std_map;
+    }
+    static google::protobuf::Map<std::string, std::string> ConvertStdMapToProtoMap(const std::unordered_map<std::string, std::string>& std_map) {
+        google::protobuf::Map<std::string, std::string> proto_map;
+        for (const auto& kv : std_map) {
+            proto_map[kv.first] = kv.second;
+        }
+        return proto_map;
+    }
+};
+```
+
+可以进行一些测试：
+
+
+```cpp
+TEST(map_helper_test, test) {
+    google::protobuf::Map<std::string, std::string> proto_map;
+    proto_map["one"] = "1";
+    proto_map["two"] = "2";
+    std::unordered_map<std::string, std::string> std_map = map_helper::ConvertProtoMapToStdMap(proto_map);
+    ASSERT_EQ(std_map.size(), 2);
+    ASSERT_EQ(std_map["one"], "1");
+    ASSERT_EQ(std_map["two"], "2");
+    google::protobuf::Map<std::string, std::string> converted_proto_map = map_helper::ConvertStdMapToProtoMap(std_map);
+    ASSERT_EQ(converted_proto_map.size(), 2);
+    ASSERT_EQ(converted_proto_map["one"], "1");
+    ASSERT_EQ(converted_proto_map["two"], "2");
+}
+```
+
 

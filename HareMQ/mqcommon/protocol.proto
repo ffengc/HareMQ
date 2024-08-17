@@ -1,0 +1,106 @@
+/*
+ * Write by Yufc
+ * See https://github.com/ffengc/HareMQ
+ * please cite my project link: https://github.com/ffengc/HareMQ when you use this code
+ */
+syntax = "proto3";
+package hare_mq;
+
+import "msg.proto";
+
+/* 信道的打开与关闭 */
+message openChannelRequest {
+    string rid = 1; // 请求id
+    string cid = 2; // 信道id
+};
+message closeChannelRequest {
+    string rid = 1;
+    string cid = 2;
+};
+/* 交换机的声明与删除 */
+message declareExchangeRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    ExchangeType exchange_type = 4;
+    bool durable = 5;
+    bool auto_delete = 6;
+    map<string, string> args = 7;
+};
+message deleteExchangeRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+};
+/* 队列的声明与删除 */
+message declareQueueRequest {
+    string rid = 1;
+    string cid = 2;
+    string queue_name = 3;
+    bool exclusive = 4;
+    bool durable = 5;
+    bool auto_delete = 6;
+    map<string, string> args = 7;
+};
+message deleteQueueRequest {
+    string rid = 1;
+    string cid = 2;
+    string queue_name = 3;
+};
+/* 队列的绑定与解除绑定 */
+message bindRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    string queue_name = 4;
+    string binding_key = 5;
+};
+message unbindRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    string queue_name = 4;
+};
+/* 消息的发布 */
+message basicPublishRequest {
+    string rid = 1;
+    string cid = 2;
+    string exchange_name = 3;
+    string body = 4;
+    BasicProperties properties = 5;
+};
+/* 消息的确认 */
+message basicAckRequest {
+    string rid = 1;
+    string cid = 2;
+    string queue_name = 3;
+    string message_id = 4;
+};
+/* 队列的订阅 */
+message basicConsumeRequest {
+    string rid = 1;
+    string cid = 2;
+    string consumer_tag = 3;
+    string queue_name = 4;
+    bool auto_ack = 5;
+};
+/* 订阅的取消 */
+message basicCancelRequest {
+    string rid = 1;
+    string cid = 2;
+    string consumer_tag = 3;
+    string queue_name = 4;
+}
+/* 消息的推送 */
+message basicConsumeResponse {
+    string cid = 1; // 不需要rid，这个是一个响应
+    string consumer_tag = 2;
+    string body = 3;
+    BasicProperties properties = 4;
+}
+/* 通用响应 */
+message basicCommonResponse {
+    string rid = 1; // 针对rid请求的响应
+    string cid = 2;
+    bool ok = 3;
+};

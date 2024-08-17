@@ -108,6 +108,7 @@ public:
     bool exists_exchange(const std::string& ename) { return __emp->exists(ename); }
     bool exists_queue(const std::string& qname) { return __mqmp->exists(qname); }
     bool exists_binding(const std::string& ename, const std::string& qname) { return __bmp->exists(ename, qname); }
+    exchange::ptr select_exchange(const std::string& ename) { return __emp->select_exchange(ename); }
 };
 } // namespace hare_mq
 
