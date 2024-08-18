@@ -44,6 +44,9 @@ public:
         __channels->close_channel(req->cid());
         return basic_response(true, req->rid(), req->cid());
     } //
+    channel::ptr select_channel(const std::string& cid) {
+        return __channels->select_channel(cid);
+    } //
 private:
     void basic_response(bool ok, const std::string& rid, const std::string& cid) {
         basicCommonResponse resp;
@@ -59,6 +62,7 @@ private:
     std::mutex __mtx;
     std::unordered_map<muduo::net::TcpConnectionPtr, connection::ptr> __conns; //
 public:
+    using ptr = std::shared_ptr<connection_manager>;
     connection_manager() = default;
     ~connection_manager() = default;
     void new_connection(const virtual_host::ptr& host,
