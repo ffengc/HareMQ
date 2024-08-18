@@ -1392,4 +1392,61 @@ public:
 
 ## 连接管理模块
 
+连接是干嘛的，为什么还要封装一层，实现起来连接和信道基本都一样啊，为什么还需要？看看这图就知道了。
 
+![](./work-assets/8.png)
+
+一个连接(socket)可能有多个信道，所以连接管理就是把多个信道管理起来。
+
+也就是说，一个连接有一个`channel_manager`。
+
+
+简简单单，封装一下即可。
+
+
+```cpp
+namespace hare_mq {
+class connection {
+private:
+    muduo::net::TcpConnectionPtr __conn;
+    ProtobufCodecPtr __codec;
+    consumer_manager::ptr __cmp;
+    virtual_host::ptr __host;
+    thread_pool::ptr __pool;
+    channel_manager::ptr __channels; //
+public:
+    connection(const virtual_host::ptr& host,
+        const consumer_manager::ptr& cmp,
+        const ProtobufCodecPtr& codec,
+        const muduo::net::TcpConnectionPtr& conn,
+        const thread_pool::ptr& pool)
+        : __conn(conn)
+        , __codec(codec)
+        , __cmp(cmp)
+        , __host(host)
+        , __pool(pool)
+        , __channels(std::make_shared<channel_manager>()) { }
+    ~connection() = default;
+    void open_channel(const openChannelRequestPtr& req) {
+        // 1. 判断信道ID是否重复 2. 创建信道
+        bool ret = __channels->open_channel(req->rid(), __host, __cmp, __codec, __conn, __pool);
+        if (ret == false)
+            return basic_response(false, req->rid(), req->cid());
+        // 3. 给客户端回复
+        return basic_response(true, req->rid(), req->cid());
+    }
+    void close_channel(const closeChannelRequestPtr& req) {
+        __channels->close_channel(req->cid());
+        return basic_response(true, req->rid(), req->cid());
+    } //
+private:
+    void basic_response(bool ok, const std::string& rid, const std::string& cid) {
+        basicCommonResponse resp;
+        resp.set_rid(rid);
+        resp.set_cid(cid);
+        resp.set_ok(ok);
+        __codec->send(__conn, resp); // 发送响应给客户端
+    } //
+};
+} // namespace hare_mq
+```

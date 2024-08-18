@@ -226,6 +226,7 @@ public:
         __channels.erase(cid);
     }
     channel::ptr select_channel(const std::string& cid) {
+        std::unique_lock<std::mutex> lock(__mtx);
         auto it = __channels.find(cid);
         if (it == __channels.end())
             return channel::ptr();
