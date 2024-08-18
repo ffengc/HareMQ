@@ -7,7 +7,7 @@
 #ifndef __YUFC_THREAD_POOL__
 #define __YUFC_THREAD_POOL__
 
-#include "../log.hpp"
+#include "../mqcommon/logger.hpp"
 #include <assert.h>
 #include <condition_variable>
 #include <deque>
