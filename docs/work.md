@@ -42,6 +42,8 @@
   - [重新梳理整个服务器的调用逻辑‼️](#重新梳理整个服务器的调用逻辑️)
   - [信道管理模块（下）](#信道管理模块下)
     - [`map`类型的冲突问题](#map类型的冲突问题)
+    - [完善信道的增删改的对外类](#完善信道的增删改的对外类)
+  - [连接管理模块](#连接管理模块)
 
 
 ## 项目目录结构创建
@@ -1361,5 +1363,33 @@ TEST(map_helper_test, test) {
     ASSERT_EQ(converted_proto_map["two"], "2");
 }
 ```
+
+
+**对于 `channel` 的其他操作，大家可以直接看代码了。**
+
+### 完善信道的增删改的对外类
+
+上面 `channel` 已经完善好了，现在只需要提供一个对 `channel` 进行管理的 `channel_manager` 类即可。
+
+```cpp
+class channel_manager {
+private:
+    std::unordered_map<std::string, channel::ptr> __channels;
+    std::mutex __mtx; //
+public:
+    channel_manager() = default;
+    ~channel_manager() = default;
+    void open_channel(const std::string& cid,
+        const virtual_host::ptr& host,
+        const consumer_manager::ptr& cmp,
+        const ProtobufCodecPtr& codec,
+        const muduo::net::TcpConnectionPtr conn,
+        const thread_pool::ptr& pool) { }
+    void close_channel(const std::string& cid);
+    channel::ptr select_channel(const std::string& cid);
+};
+```
+
+## 连接管理模块
 
 

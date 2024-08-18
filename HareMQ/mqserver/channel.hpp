@@ -20,22 +20,23 @@
 #include "virtual_host.hpp"
 
 namespace hare_mq {
+using ProtobufCodecPtr = std::shared_ptr<ProtobufCodec>;
+using openChannelRequestPtr = std::shared_ptr<openChannelRequest>;
+using closeChannelRequestPtr = std::shared_ptr<closeChannelRequest>;
+using declareExchangeRequestPtr = std::shared_ptr<declareExchangeRequest>;
+using deleteExchangeRequestPtr = std::shared_ptr<deleteExchangeRequest>;
+using declareQueueRequestPtr = std::shared_ptr<declareQueueRequest>;
+using deleteQueueRequestPtr = std::shared_ptr<deleteQueueRequest>;
+using bindRequestPtr = std::shared_ptr<bindRequest>;
+using unbindRequestPtr = std::shared_ptr<unbindRequest>;
+using basicPublishRequestPtr = std::shared_ptr<basicPublishRequest>;
+using basicAckRequestPtr = std::shared_ptr<basicAckRequest>;
+using basicConsumeRequestPtr = std::shared_ptr<basicConsumeRequest>;
+using basicCancelRequestPtr = std::shared_ptr<basicCancelRequest>;
+using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>; //
 class channel {
 public:
-    using ProtobufCodecPtr = std::shared_ptr<ProtobufCodec>;
-    using openChannelRequestPtr = std::shared_ptr<openChannelRequest>;
-    using closeChannelRequestPtr = std::shared_ptr<closeChannelRequest>;
-    using declareExchangeRequestPtr = std::shared_ptr<declareExchangeRequest>;
-    using deleteExchangeRequestPtr = std::shared_ptr<deleteExchangeRequest>;
-    using declareQueueRequestPtr = std::shared_ptr<declareQueueRequest>;
-    using deleteQueueRequestPtr = std::shared_ptr<deleteQueueRequest>;
-    using bindRequestPtr = std::shared_ptr<bindRequest>;
-    using unbindRequestPtr = std::shared_ptr<unbindRequest>;
-    using basicPublishRequestPtr = std::shared_ptr<basicPublishRequest>;
-    using basicAckRequestPtr = std::shared_ptr<basicAckRequest>;
-    using basicConsumeRequestPtr = std::shared_ptr<basicConsumeRequest>;
-    using basicCancelRequestPtr = std::shared_ptr<basicCancelRequest>;
-    using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>; //
+    using ptr = std::shared_ptr<channel>; //
 private:
     std::string __cid; // 信道标识
     consumer::ptr __consumer; // 在haremq中一个信道对应一个消费者，不一定有效，因为信道不一定是消费者关联的
@@ -71,8 +72,25 @@ private:
         }
         cp->callback(cp->tag, mp->mutable_payload()->mutable_properties(), mp->payload().body());
         // 4. 判断如果订阅者如果自动ack，则不需要等待确认，直接删除消息，否则需要等待外部收到消息确认后再删除
-        if(cp->auto_ack)
+        if (cp->auto_ack)
             __host->basic_ack(qname, mp->payload().properties().id());
+    }
+    void consume_cb(const std::string& tag, const BasicProperties* bp, const std::string& body) {
+        // 这个是消费者的回调，也就是说，消费一条信息，具体是如何消费
+        // __cmp->create(req->consumer_tag(), req->queue_name(), req->auto_ack(), /*?*/);
+        // 需要和这个保持一致: consumer.hpp
+        //      using consumer_callback = std::function<void(const std::string&, const BasicProperties*, const std::string&)>;
+        // 那推送一条消息给客户端，具体是做什么？就是组织一个响应的格式: basicConsumeResponse
+        basicConsumeResponse resp;
+        resp.set_cid(__cid);
+        resp.set_body(body);
+        resp.set_consumer_tag(tag);
+        if (bp) {
+            resp.mutable_properties()->set_id(bp->id());
+            resp.mutable_properties()->set_delivery_mode(bp->delivery_mode());
+            resp.mutable_properties()->set_routing_key(bp->routing_key());
+        }
+        __codec->send(__conn, resp);
     }
 
 public:
@@ -159,11 +177,62 @@ public:
         }
         return basic_response(true, req->rid(), req->cid());
     }
-    void basic_ack(const basicAckRequestPtr& req);
+    void basic_ack(const basicAckRequestPtr& req) {
+        __host->basic_ack(req->queue_name(), req->message_id()); // ack this mesg
+        return basic_response(true, req->rid(), req->cid());
+    }
     // 订阅/取消订阅队列消息
-    void basic_consume(const basicConsumeRequestPtr& req);
-    void basic_cancel(const basicCancelRequestPtr& req);
+    void basic_consume(const basicConsumeRequestPtr& req) {
+        // 1. 判断队列是否存在
+        bool ret = __host->exists_queue(req->queue_name());
+        if (ret == false)
+            return basic_response(false, req->rid(), req->cid());
+        // 2. 创建队列的消费者
+        auto cb = std::bind(&channel::consume_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        // 创建了消费者之后，当前的 channel 就是一个消费者
+        __consumer = __cmp->create(req->consumer_tag(), req->queue_name(), req->auto_ack(), /*important*/ cb);
+        return basic_response(true, req->rid(), req->cid());
+    }
+    void basic_cancel(const basicCancelRequestPtr& req) {
+        __cmp->remove(req->consumer_tag(), req->queue_name());
+        return basic_response(false, req->rid(), req->cid());
+    }
 };
+
+class channel_manager {
+private:
+    std::unordered_map<std::string, channel::ptr> __channels;
+    std::mutex __mtx; //
+public:
+    using ptr = std::shared_ptr<channel_manager>;
+    channel_manager() = default;
+    ~channel_manager() = default;
+    bool open_channel(const std::string& cid,
+        const virtual_host::ptr& host,
+        const consumer_manager::ptr& cmp,
+        const ProtobufCodecPtr& codec,
+        const muduo::net::TcpConnectionPtr conn,
+        const thread_pool::ptr& pool) {
+        std::unique_lock<std::mutex> lock(__mtx);
+        auto it = __channels.find(cid);
+        if (it != __channels.end())
+            return false;
+        auto ch = std::make_shared<channel>(cid, host, cmp, codec, conn, pool);
+        __channels.insert({ cid, ch });
+        return true;
+    }
+    void close_channel(const std::string& cid) {
+        std::unique_lock<std::mutex> lock(__mtx);
+        __channels.erase(cid);
+    }
+    channel::ptr select_channel(const std::string& cid) {
+        auto it = __channels.find(cid);
+        if (it == __channels.end())
+            return channel::ptr();
+        return it->second;
+    }
+};
+
 } // namespace hare_mq
 
 #endif
