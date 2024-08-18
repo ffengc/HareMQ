@@ -82,6 +82,9 @@ public:
     msg_queue_binding_map exchange_bindings(const std::string& ename) {
         return __bmp->get_exchange_bindings(ename); // 获取交换机的绑定信息
     } // 获取一台交换机的所有绑定信息
+    queue_map all_queues() {
+        return __mqmp->all();
+    }
     bool basic_publish(const std::string& qname, BasicProperties* bp, const std::string& body) {
         msg_queue::ptr mqp = __mqmp->select_queue(qname); // 先找到这个队列
         if (mqp == nullptr) {
