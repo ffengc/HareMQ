@@ -22,6 +22,7 @@
 namespace hare_mq {
 class connection {
 public:
+    using ptr = std::shared_ptr<connection>;
     using message_ptr = std::shared_ptr<google::protobuf::Message>;
     using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>;
     using basicConsumeResponsePtr = std::shared_ptr<basicConsumeResponse>; //
