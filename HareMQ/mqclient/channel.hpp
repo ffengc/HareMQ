@@ -16,8 +16,6 @@
 #include "muduo/net/TcpConnection.h"
 #include "muduo/protoc/codec.h"
 #include "muduo/protoc/dispatcher.h"
-#include "route.hpp"
-#include "virtual_host.hpp"
 #include <condition_variable>
 #include <mutex>
 
@@ -67,7 +65,7 @@ public:
         ExchangeType type,
         bool durable,
         bool auto_delete,
-        std::unordered_map<std::string, std::string>& args) {
+        const std::unordered_map<std::string, std::string>& args) {
         // 构造请求对象
         declareExchangeRequest req;
         std::string rid = uuid_helper::uuid();
@@ -159,12 +157,16 @@ public:
         __codec->send(__conn, req);
         basicCommonResponsePtr resp = wait_response(rid);
     }
-    void basic_ack(const std::string& qname, const std::string& msgid) {
+    void basic_ack(const std::string& msgid) {
+        if (__consumer == nullptr) {
+            LOG(ERROR) << "cannot find consumer info" << std::endl;
+            return;
+        }
         basicAckRequest req;
         std::string rid = uuid_helper::uuid();
         req.set_rid(rid);
         req.set_cid(__cid);
-        req.set_queue_name(qname);
+        req.set_queue_name(__consumer->qname); // fix bus
         req.set_message_id(msgid);
         __codec->send(__conn, req);
         basicCommonResponsePtr resp = wait_response(rid);

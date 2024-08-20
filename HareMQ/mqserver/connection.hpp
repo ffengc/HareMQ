@@ -34,7 +34,7 @@ public:
     ~connection() = default;
     void open_channel(const openChannelRequestPtr& req) {
         // 1. 判断信道ID是否重复 2. 创建信道
-        bool ret = __channels->open_channel(req->rid(), __host, __cmp, __codec, __conn, __pool);
+        bool ret = __channels->open_channel(req->cid(), __host, __cmp, __codec, __conn, __pool); // bug found!
         if (ret == false)
             return basic_response(false, req->rid(), req->cid());
         // 3. 给客户端回复
