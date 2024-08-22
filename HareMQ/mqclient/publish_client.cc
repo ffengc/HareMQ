@@ -25,8 +25,27 @@ void publish_client() {
     //  4.5 绑定 queue2-exchange1, 且 binding_key 设置为 news.music.#
     ch->bind("exchange1", "queue2", "news.music.#");
     // 5. 循环向交换机发布消息
-    for (int i = 0; i < 10; ++i)
-        ch->basic_publish("exchange1", nullptr, "Hello world-" + std::to_string(i));
+    for (int i = 0; ; ++i) {
+        hare_mq::BasicProperties bp;
+        bp.set_id(hare_mq::uuid_helper::uuid());
+        bp.set_delivery_mode(hare_mq::DeliveryMode::DURABLE);
+        bp.set_routing_key("news.music.pop");
+        ch->basic_publish("exchange1", &bp, "Hello world-" + std::to_string(i)); // queue2 可以收到消息
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    #if false
+    hare_mq::BasicProperties bp2;
+    bp2.set_id(hare_mq::uuid_helper::uuid());
+    bp2.set_delivery_mode(hare_mq::DeliveryMode::DURABLE);
+    bp2.set_routing_key("news.music.sport");
+    ch->basic_publish("exchange1", &bp2, "Hello Linux"); // queue2 可以收到消息
+    hare_mq::BasicProperties bp3;
+    bp3.set_id(hare_mq::uuid_helper::uuid());
+    bp3.set_delivery_mode(hare_mq::DeliveryMode::DURABLE);
+    bp3.set_routing_key("news.sport.#");
+    ch->basic_publish("exchange1", &bp3, "Hello Linux sport"); // queue1, queue2 都收不到这条消息
+    #endif
+
     // 6. 关闭信道
     conn->closeChannel(ch);
 }

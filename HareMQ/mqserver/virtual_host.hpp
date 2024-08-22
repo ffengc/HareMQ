@@ -12,6 +12,7 @@
 #include "exchange.hpp"
 #include "message.hpp"
 #include "queue.hpp"
+#include <tuple>
 
 namespace hare_mq {
 class virtual_host {
@@ -99,6 +100,48 @@ public:
     void basic_ack(const std::string& qname, const std::string& msgid) {
         __mmp->ack(qname, msgid);
     } // 确认一条消息
+    std::string basic_query() {
+        std::string yellow_bold = "\033[1;33m"; // 1 表示加粗, 33 表示前景色为黄色
+        std::string reset = "\033[0m"; // 重置样式
+        std::vector<std::tuple<std::string, std::string, std::string>> all_bindings;
+        // 获取所有交换机
+        auto all_ex = __emp->select_all_exchanges();
+        std::string res_str;
+        res_str += yellow_bold + "------------------------ Query ------------------------\n" + reset;
+        res_str += yellow_bold + "exists exchanges: " + reset + '\n';
+        res_str += "    ";
+        for (const auto& e : all_ex) {
+            // 先获取这台交换机的所有绑定信息
+            msg_queue_binding_map this_ex_bindings = exchange_bindings(e.first);
+            for (const auto& q : this_ex_bindings) {
+                assert(q.second->exchange_name == e.first);
+                all_bindings.push_back(std::make_tuple(q.second->exchange_name, q.second->msg_queue_name, q.second->binding_key));
+            }
+            res_str += e.first;
+            res_str += ", ";
+        }
+        res_str += '\n';
+        // 获取所有队列
+        auto all_q = all_queues();
+        res_str += yellow_bold + "exists queues: \n" + reset;
+        res_str += "    ";
+        for (const auto& e : all_q) {
+            res_str += e.first;
+            res_str += ", ";
+        }
+        res_str += '\n';
+        // 整理所有binding
+        res_str += yellow_bold + "exists bindings: \n" + reset;
+        for (const auto& e : all_bindings) {
+            std::string tmp_ename = std::get<0>(e);
+            std::string tmp_qname = std::get<1>(e);
+            std::string tmp_binding_key = std::get<2>(e);
+            std::string line = "    " + tmp_ename + "<-->" + tmp_qname + ", binding_key: " + tmp_binding_key + "\n";
+            res_str += line;
+        }
+        res_str += yellow_bold + "-------------------------------------------------------" + reset;
+        return res_str;
+    }
     void clear() {
         __emp->clear_exchange();
         __mqmp->clear_queues();

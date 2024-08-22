@@ -25,7 +25,8 @@ public:
     using ptr = std::shared_ptr<connection>;
     using message_ptr = std::shared_ptr<google::protobuf::Message>;
     using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>;
-    using basicConsumeResponsePtr = std::shared_ptr<basicConsumeResponse>; //
+    using basicConsumeResponsePtr = std::shared_ptr<basicConsumeResponse>;
+    using basicQueryResponsePtr = std::shared_ptr<basicQueryResponse>; //
 private:
     muduo::CountDownLatch __latch; // 实现同步的
     muduo::net::TcpConnectionPtr __conn; // 客户端对应的连接
@@ -54,6 +55,10 @@ public:
             std::placeholders::_2,
             std::placeholders::_3));
         __dispatcher.registerMessageCallback<basicConsumeResponse>(std::bind(&connection::consumeResponse,
+            this, std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3));
+        __dispatcher.registerMessageCallback<basicQueryResponse>(std::bind(&connection::queryRespone,
             this, std::placeholders::_1,
             std::placeholders::_2,
             std::placeholders::_3));
@@ -96,6 +101,13 @@ private:
         // 2. 封装异步任务，抛入到线程池
         __worker->pool.push([ch, message]() {
             ch->consume(message);
+        });
+    }
+    void queryRespone(const muduo::net::TcpConnectionPtr& conn, const basicQueryResponsePtr& message, muduo::Timestamp ts) {
+        channel::ptr ch = __channel_manager->select_channel(message->cid());
+        // 2. 封装异步任务，抛入到线程池
+        __worker->pool.push([ch, message]() {
+            ch->query(message);
         });
     }
     void onUnknownMessage(const muduo::net::TcpConnectionPtr& conn, const MessagePtr& message, muduo::Timestamp ts) {

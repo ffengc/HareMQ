@@ -69,6 +69,7 @@ public:
         __dispatcher.registerMessageCallback<basicAckRequest>(std::bind(&BrokerServer::on_basicAck, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         __dispatcher.registerMessageCallback<basicConsumeRequest>(std::bind(&BrokerServer::on_basicConsume, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         __dispatcher.registerMessageCallback<basicCancelRequest>(std::bind(&BrokerServer::on_basicCancel, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        __dispatcher.registerMessageCallback<basicQueryRequest>(std::bind(&BrokerServer::on_basicQuery, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         // 设置消息回调
         __server.setMessageCallback(std::bind(&ProtobufCodec::onMessage, __codec,
             std::placeholders::_1,
@@ -252,6 +253,21 @@ private:
             return;
         }
         return cp->basic_cancel(message);
+    }
+    // 查询
+    void on_basicQuery(const muduo::net::TcpConnectionPtr& conn, const basicQueryRequestPtr& message, muduo::Timestamp ts) {
+        connection::ptr new_conn = __connection_manager->select_connection(conn);
+        if (new_conn == nullptr) {
+            LOG(WARNING) << "unknown connection" << std::endl;
+            conn->shutdown();
+            return;
+        }
+        channel::ptr cp = new_conn->select_channel(message->cid());
+        if (cp == nullptr) {
+            LOG(WARNING) << "unknown channel in this connection" << std::endl;
+            return;
+        }
+        return cp->basic_query(message);
     }
     // 未知请求
     void onUnknownMessage(const muduo::net::TcpConnectionPtr& conn, const MessagePtr& message, muduo::Timestamp ts) {

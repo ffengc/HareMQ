@@ -67,6 +67,12 @@ extern basicConsumeResponseDefaultTypeInternal _basicConsumeResponse_default_ins
 class basicPublishRequest;
 struct basicPublishRequestDefaultTypeInternal;
 extern basicPublishRequestDefaultTypeInternal _basicPublishRequest_default_instance_;
+class basicQueryRequest;
+struct basicQueryRequestDefaultTypeInternal;
+extern basicQueryRequestDefaultTypeInternal _basicQueryRequest_default_instance_;
+class basicQueryResponse;
+struct basicQueryResponseDefaultTypeInternal;
+extern basicQueryResponseDefaultTypeInternal _basicQueryResponse_default_instance_;
 class bindRequest;
 struct bindRequestDefaultTypeInternal;
 extern bindRequestDefaultTypeInternal _bindRequest_default_instance_;
@@ -105,6 +111,8 @@ template<> ::hare_mq::basicCommonResponse* Arena::CreateMaybeMessage<::hare_mq::
 template<> ::hare_mq::basicConsumeRequest* Arena::CreateMaybeMessage<::hare_mq::basicConsumeRequest>(Arena*);
 template<> ::hare_mq::basicConsumeResponse* Arena::CreateMaybeMessage<::hare_mq::basicConsumeResponse>(Arena*);
 template<> ::hare_mq::basicPublishRequest* Arena::CreateMaybeMessage<::hare_mq::basicPublishRequest>(Arena*);
+template<> ::hare_mq::basicQueryRequest* Arena::CreateMaybeMessage<::hare_mq::basicQueryRequest>(Arena*);
+template<> ::hare_mq::basicQueryResponse* Arena::CreateMaybeMessage<::hare_mq::basicQueryResponse>(Arena*);
 template<> ::hare_mq::bindRequest* Arena::CreateMaybeMessage<::hare_mq::bindRequest>(Arena*);
 template<> ::hare_mq::closeChannelRequest* Arena::CreateMaybeMessage<::hare_mq::closeChannelRequest>(Arena*);
 template<> ::hare_mq::declareExchangeRequest* Arena::CreateMaybeMessage<::hare_mq::declareExchangeRequest>(Arena*);
@@ -2938,6 +2946,334 @@ class basicCommonResponse final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_protocol_2eproto;
 };
+// -------------------------------------------------------------------
+
+class basicQueryRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:hare_mq.basicQueryRequest) */ {
+ public:
+  inline basicQueryRequest() : basicQueryRequest(nullptr) {}
+  ~basicQueryRequest() override;
+  explicit PROTOBUF_CONSTEXPR basicQueryRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  basicQueryRequest(const basicQueryRequest& from);
+  basicQueryRequest(basicQueryRequest&& from) noexcept
+    : basicQueryRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline basicQueryRequest& operator=(const basicQueryRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline basicQueryRequest& operator=(basicQueryRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const basicQueryRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const basicQueryRequest* internal_default_instance() {
+    return reinterpret_cast<const basicQueryRequest*>(
+               &_basicQueryRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    16;
+
+  friend void swap(basicQueryRequest& a, basicQueryRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(basicQueryRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(basicQueryRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  basicQueryRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<basicQueryRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const basicQueryRequest& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const basicQueryRequest& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(basicQueryRequest* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "hare_mq.basicQueryRequest";
+  }
+  protected:
+  explicit basicQueryRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kRidFieldNumber = 1,
+    kCidFieldNumber = 2,
+  };
+  // string rid = 1;
+  void clear_rid();
+  const std::string& rid() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_rid(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_rid();
+  PROTOBUF_NODISCARD std::string* release_rid();
+  void set_allocated_rid(std::string* rid);
+  private:
+  const std::string& _internal_rid() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_rid(const std::string& value);
+  std::string* _internal_mutable_rid();
+  public:
+
+  // string cid = 2;
+  void clear_cid();
+  const std::string& cid() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_cid(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_cid();
+  PROTOBUF_NODISCARD std::string* release_cid();
+  void set_allocated_cid(std::string* cid);
+  private:
+  const std::string& _internal_cid() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_cid(const std::string& value);
+  std::string* _internal_mutable_cid();
+  public:
+
+  // @@protoc_insertion_point(class_scope:hare_mq.basicQueryRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr rid_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr cid_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_protocol_2eproto;
+};
+// -------------------------------------------------------------------
+
+class basicQueryResponse final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:hare_mq.basicQueryResponse) */ {
+ public:
+  inline basicQueryResponse() : basicQueryResponse(nullptr) {}
+  ~basicQueryResponse() override;
+  explicit PROTOBUF_CONSTEXPR basicQueryResponse(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  basicQueryResponse(const basicQueryResponse& from);
+  basicQueryResponse(basicQueryResponse&& from) noexcept
+    : basicQueryResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline basicQueryResponse& operator=(const basicQueryResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline basicQueryResponse& operator=(basicQueryResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const basicQueryResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const basicQueryResponse* internal_default_instance() {
+    return reinterpret_cast<const basicQueryResponse*>(
+               &_basicQueryResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    17;
+
+  friend void swap(basicQueryResponse& a, basicQueryResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(basicQueryResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(basicQueryResponse* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  basicQueryResponse* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<basicQueryResponse>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const basicQueryResponse& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const basicQueryResponse& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(basicQueryResponse* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "hare_mq.basicQueryResponse";
+  }
+  protected:
+  explicit basicQueryResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kCidFieldNumber = 1,
+    kBodyFieldNumber = 2,
+  };
+  // string cid = 1;
+  void clear_cid();
+  const std::string& cid() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_cid(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_cid();
+  PROTOBUF_NODISCARD std::string* release_cid();
+  void set_allocated_cid(std::string* cid);
+  private:
+  const std::string& _internal_cid() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_cid(const std::string& value);
+  std::string* _internal_mutable_cid();
+  public:
+
+  // string body = 2;
+  void clear_body();
+  const std::string& body() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_body(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_body();
+  PROTOBUF_NODISCARD std::string* release_body();
+  void set_allocated_body(std::string* body);
+  private:
+  const std::string& _internal_body() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(const std::string& value);
+  std::string* _internal_mutable_body();
+  public:
+
+  // @@protoc_insertion_point(class_scope:hare_mq.basicQueryResponse)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr cid_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr body_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_protocol_2eproto;
+};
 // ===================================================================
 
 
@@ -5693,9 +6029,221 @@ inline void basicCommonResponse::set_ok(bool value) {
   // @@protoc_insertion_point(field_set:hare_mq.basicCommonResponse.ok)
 }
 
+// -------------------------------------------------------------------
+
+// basicQueryRequest
+
+// string rid = 1;
+inline void basicQueryRequest::clear_rid() {
+  rid_.ClearToEmpty();
+}
+inline const std::string& basicQueryRequest::rid() const {
+  // @@protoc_insertion_point(field_get:hare_mq.basicQueryRequest.rid)
+  return _internal_rid();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void basicQueryRequest::set_rid(ArgT0&& arg0, ArgT... args) {
+ 
+ rid_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:hare_mq.basicQueryRequest.rid)
+}
+inline std::string* basicQueryRequest::mutable_rid() {
+  std::string* _s = _internal_mutable_rid();
+  // @@protoc_insertion_point(field_mutable:hare_mq.basicQueryRequest.rid)
+  return _s;
+}
+inline const std::string& basicQueryRequest::_internal_rid() const {
+  return rid_.Get();
+}
+inline void basicQueryRequest::_internal_set_rid(const std::string& value) {
+  
+  rid_.Set(value, GetArenaForAllocation());
+}
+inline std::string* basicQueryRequest::_internal_mutable_rid() {
+  
+  return rid_.Mutable(GetArenaForAllocation());
+}
+inline std::string* basicQueryRequest::release_rid() {
+  // @@protoc_insertion_point(field_release:hare_mq.basicQueryRequest.rid)
+  return rid_.Release();
+}
+inline void basicQueryRequest::set_allocated_rid(std::string* rid) {
+  if (rid != nullptr) {
+    
+  } else {
+    
+  }
+  rid_.SetAllocated(rid, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (rid_.IsDefault()) {
+    rid_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:hare_mq.basicQueryRequest.rid)
+}
+
+// string cid = 2;
+inline void basicQueryRequest::clear_cid() {
+  cid_.ClearToEmpty();
+}
+inline const std::string& basicQueryRequest::cid() const {
+  // @@protoc_insertion_point(field_get:hare_mq.basicQueryRequest.cid)
+  return _internal_cid();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void basicQueryRequest::set_cid(ArgT0&& arg0, ArgT... args) {
+ 
+ cid_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:hare_mq.basicQueryRequest.cid)
+}
+inline std::string* basicQueryRequest::mutable_cid() {
+  std::string* _s = _internal_mutable_cid();
+  // @@protoc_insertion_point(field_mutable:hare_mq.basicQueryRequest.cid)
+  return _s;
+}
+inline const std::string& basicQueryRequest::_internal_cid() const {
+  return cid_.Get();
+}
+inline void basicQueryRequest::_internal_set_cid(const std::string& value) {
+  
+  cid_.Set(value, GetArenaForAllocation());
+}
+inline std::string* basicQueryRequest::_internal_mutable_cid() {
+  
+  return cid_.Mutable(GetArenaForAllocation());
+}
+inline std::string* basicQueryRequest::release_cid() {
+  // @@protoc_insertion_point(field_release:hare_mq.basicQueryRequest.cid)
+  return cid_.Release();
+}
+inline void basicQueryRequest::set_allocated_cid(std::string* cid) {
+  if (cid != nullptr) {
+    
+  } else {
+    
+  }
+  cid_.SetAllocated(cid, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (cid_.IsDefault()) {
+    cid_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:hare_mq.basicQueryRequest.cid)
+}
+
+// -------------------------------------------------------------------
+
+// basicQueryResponse
+
+// string cid = 1;
+inline void basicQueryResponse::clear_cid() {
+  cid_.ClearToEmpty();
+}
+inline const std::string& basicQueryResponse::cid() const {
+  // @@protoc_insertion_point(field_get:hare_mq.basicQueryResponse.cid)
+  return _internal_cid();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void basicQueryResponse::set_cid(ArgT0&& arg0, ArgT... args) {
+ 
+ cid_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:hare_mq.basicQueryResponse.cid)
+}
+inline std::string* basicQueryResponse::mutable_cid() {
+  std::string* _s = _internal_mutable_cid();
+  // @@protoc_insertion_point(field_mutable:hare_mq.basicQueryResponse.cid)
+  return _s;
+}
+inline const std::string& basicQueryResponse::_internal_cid() const {
+  return cid_.Get();
+}
+inline void basicQueryResponse::_internal_set_cid(const std::string& value) {
+  
+  cid_.Set(value, GetArenaForAllocation());
+}
+inline std::string* basicQueryResponse::_internal_mutable_cid() {
+  
+  return cid_.Mutable(GetArenaForAllocation());
+}
+inline std::string* basicQueryResponse::release_cid() {
+  // @@protoc_insertion_point(field_release:hare_mq.basicQueryResponse.cid)
+  return cid_.Release();
+}
+inline void basicQueryResponse::set_allocated_cid(std::string* cid) {
+  if (cid != nullptr) {
+    
+  } else {
+    
+  }
+  cid_.SetAllocated(cid, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (cid_.IsDefault()) {
+    cid_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:hare_mq.basicQueryResponse.cid)
+}
+
+// string body = 2;
+inline void basicQueryResponse::clear_body() {
+  body_.ClearToEmpty();
+}
+inline const std::string& basicQueryResponse::body() const {
+  // @@protoc_insertion_point(field_get:hare_mq.basicQueryResponse.body)
+  return _internal_body();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void basicQueryResponse::set_body(ArgT0&& arg0, ArgT... args) {
+ 
+ body_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:hare_mq.basicQueryResponse.body)
+}
+inline std::string* basicQueryResponse::mutable_body() {
+  std::string* _s = _internal_mutable_body();
+  // @@protoc_insertion_point(field_mutable:hare_mq.basicQueryResponse.body)
+  return _s;
+}
+inline const std::string& basicQueryResponse::_internal_body() const {
+  return body_.Get();
+}
+inline void basicQueryResponse::_internal_set_body(const std::string& value) {
+  
+  body_.Set(value, GetArenaForAllocation());
+}
+inline std::string* basicQueryResponse::_internal_mutable_body() {
+  
+  return body_.Mutable(GetArenaForAllocation());
+}
+inline std::string* basicQueryResponse::release_body() {
+  // @@protoc_insertion_point(field_release:hare_mq.basicQueryResponse.body)
+  return body_.Release();
+}
+inline void basicQueryResponse::set_allocated_body(std::string* body) {
+  if (body != nullptr) {
+    
+  } else {
+    
+  }
+  body_.SetAllocated(body, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (body_.IsDefault()) {
+    body_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:hare_mq.basicQueryResponse.body)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

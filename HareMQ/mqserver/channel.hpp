@@ -33,6 +33,7 @@ using basicPublishRequestPtr = std::shared_ptr<basicPublishRequest>;
 using basicAckRequestPtr = std::shared_ptr<basicAckRequest>;
 using basicConsumeRequestPtr = std::shared_ptr<basicConsumeRequest>;
 using basicCancelRequestPtr = std::shared_ptr<basicCancelRequest>;
+using basicQueryRequestPtr = std::shared_ptr<basicQueryRequest>;
 using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>; //
 class channel {
 public:
@@ -65,8 +66,7 @@ private:
         consumer::ptr cp = __cmp->choose(qname); // 这个是在发布消息，不能找 __consumer，__consumer是这个channel作为消费者的时候才有用，我现在是在发布消息
         // 3. 调用订阅者对应的消息处理函数，实现消息的推送
         if (cp == nullptr) {
-            LOG(ERROR) << "asyn run 'void consume(const std::string& qname)' failed, \
-                the queue has no consumers (nobody subscribed this queue)"
+            LOG(ERROR) << "asyn run 'void consume(const std::string& qname)' failed, the queue has no consumers (nobody subscribed this queue)"
                        << qname << std::endl;
             return;
         }
@@ -92,7 +92,12 @@ private:
         }
         __codec->send(__conn, resp);
     }
-
+    void query_cb(const std::string& query_res) {
+        basicQueryResponse resp;
+        resp.set_cid(__cid);
+        resp.set_body(query_res);
+        __codec->send(__conn, resp);
+    } //
 public:
     channel(const std::string& cid,
         const virtual_host::ptr& host,
@@ -196,6 +201,11 @@ public:
     void basic_cancel(const basicCancelRequestPtr& req) {
         __cmp->remove(req->consumer_tag(), req->queue_name());
         return basic_response(false, req->rid(), req->cid());
+    }
+    void basic_query(const basicQueryRequestPtr& req) {
+        std::string ret = __host->basic_query();
+        query_cb(ret);
+        return basic_response(true, req->rid(), req->cid());
     }
 };
 

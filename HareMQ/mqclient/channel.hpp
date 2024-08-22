@@ -22,7 +22,8 @@
 namespace hare_mq {
 using ProtobufCodecPtr = std::shared_ptr<ProtobufCodec>;
 using basicConsumeResponsePtr = std::shared_ptr<basicConsumeResponse>;
-using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>; //
+using basicCommonResponsePtr = std::shared_ptr<basicCommonResponse>;
+using basicQueryResponsePtr = std::shared_ptr<basicQueryResponse>; //
 class channel {
 public:
     using ptr = std::shared_ptr<channel>; //
@@ -42,7 +43,7 @@ public:
     ~channel() {
         // 需要取消订阅
         /* note: 如果不取消订阅，也不会有问题，因为我们的服务端很完善，如果被释放，所有东西都会自动解除的 */
-        basic_cancel(__consumer->tag);
+        basic_cancel();
     }
     bool open_server_channel() {
         openChannelRequest req;
@@ -193,7 +194,7 @@ public:
         __consumer = std::make_shared<consumer>(consumer_tag, queue_name, auto_ack, cb);
         return true;
     }
-    void basic_cancel(const std::string& consumer_tag) {
+    void basic_cancel() {
         if (__consumer == nullptr)
             return;
         basicCancelRequest req;
@@ -206,6 +207,15 @@ public:
         basicCommonResponsePtr resp = wait_response(rid);
         __consumer.reset();
     } //
+    void basic_query() {
+        basicQueryRequest req;
+        std::string rid = uuid_helper::uuid();
+        req.set_rid(rid);
+        req.set_cid(__cid);
+        __codec->send(__conn, req);
+        basicCommonResponsePtr resp = wait_response(rid);
+        return;
+    } //
 public:
     std::string cid() { return this->__cid; }
     void push_basic_response(const basicCommonResponsePtr& resp) {
@@ -215,6 +225,7 @@ public:
     } // 连接收到响应向hashmap添加响应
     // 连接收到消息推送后，需要通过信道找到对应的消费者对象，通过回调函数进行消息处理
     void consume(const basicConsumeResponsePtr& resp) {
+        // std::unique_lock<std::mutex> lock(__mtx); // 千千万万不能加锁！这个是线程调的！
         if (__consumer == nullptr) {
             LOG(ERROR) << "cannot find subscriber info" << std::endl;
             return;
@@ -225,6 +236,11 @@ public:
         }
         __consumer->callback(resp->consumer_tag(), resp->mutable_properties(), resp->body());
     } //
+    void query(const basicQueryResponsePtr& resp) {
+        std::unique_lock<std::mutex> lock(__mtx);
+        std::cout << resp->body() << std::endl;
+    }
+
 private:
     basicCommonResponsePtr wait_response(const std::string& rid) {
         std::unique_lock<std::mutex> lock(__mtx);

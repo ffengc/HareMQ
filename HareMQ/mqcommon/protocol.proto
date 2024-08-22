@@ -104,3 +104,12 @@ message basicCommonResponse {
     string cid = 2;
     bool ok = 3;
 };
+/* 查询 */
+message basicQueryRequest {
+    string rid = 1; // 针对rid请求的响应
+    string cid = 2;
+}
+message basicQueryResponse {
+    string cid = 1;
+    string body = 2;  
+}
