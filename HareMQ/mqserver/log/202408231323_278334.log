@@ -1,0 +1,39 @@
+[INFO][broker_server.hpp][98] 
+------------------- Server Start --------------------
+IP Address and Port: 0.0.0.0:8085
+Start Time: Fri Aug 23 13:23:17 2024
+User: ffengc
+Process ID: 278334
+-------------------------------------------------------
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#1
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35698
+[REQUEST][broker_server.hpp][116] <from 127.0.0.1:35698> Request: openChannelRequest
+[REQUEST][broker_server.hpp][303] <from 127.0.0.1:35698> Request: basicQueryRequest
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#2
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35714
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#3
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35726
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#4
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:45676
+[REQUEST][broker_server.hpp][116] <from 127.0.0.1:45676> Request: openChannelRequest
+[REQUEST][broker_server.hpp][303] <from 127.0.0.1:45676> Request: basicQueryRequest
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][328] disconnected

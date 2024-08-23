@@ -1,0 +1,10 @@
+[INFO][client.cc][406] 
+------------------- Client Start --------------------
+Start Time: Fri Aug 23 23:59:26 2024
+User: ffengc
+Process ID: 383540
+-------------------------------------------------------
+[INFO][connection.hpp][122] connected
+[INFO][client.cc][74] channel connected
+[INFO][client.cc][118] running config file: 'config/for_test.cfg' ...
+[INFO][client.cc][138] run config file: config/for_test.cfg success, please check the server stats

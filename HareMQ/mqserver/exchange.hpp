@@ -203,6 +203,9 @@ public:
             return exchange::ptr(); // null
         return it->second;
     }
+    std::unordered_map<std::string, exchange::ptr> select_all_exchanges() {
+        return this->__exchanges;
+    }
     bool exists(const std::string& name) {
         // 判断交换机是否存在
         std::unique_lock<std::mutex> lock(__mtx); // 需要加锁保护
