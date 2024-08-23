@@ -21,6 +21,10 @@
 #include "connection.hpp"
 #include "consumer.hpp"
 #include "virtual_host.hpp"
+#include <pwd.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
 namespace hare_mq {
 #define DBFILE_PATH "/meta.db"
@@ -78,10 +82,27 @@ public:
         __server.setConnectionCallback(std::bind(&BrokerServer::onConnection, this, std::placeholders::_1));
     }
     void start() {
+        printServerInfo();
         __server.start();
         __base_loop.loop();
-    }
-
+    } //
+private:
+    void printServerInfo() {
+        auto listenAddr = __server.ipPort(); // Ensure you have a method or accessor to get this info from TcpServer
+        auto startTime = std::time(nullptr);
+        std::string startTimeStr = std::ctime(&startTime);
+        auto uid = getuid();
+        struct passwd* pw = getpwuid(uid);
+        std::string userName = (pw ? pw->pw_name : "Unknown User");
+        pid_t pid = getpid();
+        LOG(INFO) << std::endl
+                  << "------------------- Server Start --------------------" << std::endl
+                  << "IP Address and Port: " << listenAddr << std::endl // make sure listenAddr provides correct format
+                  << "Start Time: " << startTimeStr
+                  << "User: " << userName << std::endl
+                  << "Process ID: " << std::to_string(pid) << std::endl
+                  << "-------------------------------------------------------" << std::endl;
+    } //
 private:
     // list all the request
     // 打开信道请求
@@ -92,6 +113,7 @@ private:
             conn->shutdown();
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: openChannelRequest" << std::endl;
         return new_conn->open_channel(message);
     }
     // 关闭信道请求
@@ -102,6 +124,7 @@ private:
             conn->shutdown();
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: closeChannelRequest" << std::endl;
         return new_conn->close_channel(message);
     }
     // 声明交换机请求
@@ -117,6 +140,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: declareExchangeRequest" << std::endl;
         return cp->declare_exchange(message);
     }
     // 删除交换机请求
@@ -132,6 +156,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: deleteExchangeRequest" << std::endl;
         return cp->delete_exchange(message);
     }
     // 声明队列请求
@@ -147,6 +172,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: declareQueueRequest" << std::endl;
         return cp->declare_queue(message);
     }
     // 删除队列请求
@@ -162,6 +188,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: deleteQueueRequest" << std::endl;
         return cp->delete_queue(message);
     }
     // 绑定请求
@@ -177,6 +204,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: bindRequest" << std::endl;
         return cp->bind(message);
     }
     // 解绑请求
@@ -192,6 +220,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: unbindRequest" << std::endl;
         return cp->unbind(message);
     }
     // 消息发布
@@ -207,6 +236,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: basicPublishRequest" << std::endl;
         return cp->basic_publish(message);
     }
     // 消息确认
@@ -222,6 +252,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: basicAckRequest" << std::endl;
         return cp->basic_ack(message);
     }
     // 消息订阅
@@ -237,6 +268,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: basicConsumeRequest" << std::endl;
         return cp->basic_consume(message);
     }
     // 取消订阅
@@ -252,6 +284,7 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: basicCancelRequest" << std::endl;
         return cp->basic_cancel(message);
     }
     // 查询
@@ -267,17 +300,29 @@ private:
             LOG(WARNING) << "unknown channel in this connection" << std::endl;
             return;
         }
+        LOG(REQUEST) << "<from " << conn->peerAddress().toIpPort() << "> Request: basicQueryRequest" << std::endl;
         return cp->basic_query(message);
     }
     // 未知请求
     void onUnknownMessage(const muduo::net::TcpConnectionPtr& conn, const MessagePtr& message, muduo::Timestamp ts) {
-        LOG(INFO) << "onUnknownMessage: " << message->GetTypeName() << std::endl;
+        LOG(WARNING) << "onUnknownMessage: " << message->GetTypeName() << std::endl;
         conn->shutdown();
     }
     // 连接
+    void printConnectionInfo(const muduo::net::TcpConnectionPtr& conn) {
+        std::string connName = conn->name();
+        std::string localIp = conn->localAddress().toIpPort();
+        std::string peerIp = conn->peerAddress().toIpPort();
+        LOG(INFO) << std::endl
+                  << "New Connection: " << std::endl
+                  << "Connection Name: " << connName << std::endl
+                  << "Local IP: " << localIp << std::endl
+                  << "Peer IP: " << peerIp << std::endl;
+    }
     void onConnection(const muduo::net::TcpConnectionPtr& conn) {
         if (conn->connected()) {
             LOG(INFO) << "connected" << std::endl;
+            printConnectionInfo(conn);
             __connection_manager->new_connection(__virtual_host, __consumer_manager, __codec, conn, __thread_pool);
         } else {
             LOG(INFO) << "disconnected" << std::endl;

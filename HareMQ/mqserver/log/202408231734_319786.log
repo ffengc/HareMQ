@@ -1,0 +1,253 @@
+[INFO][broker_server.hpp][98] 
+------------------- Server Start --------------------
+IP Address and Port: 0.0.0.0:8085
+Start Time: Fri Aug 23 17:34:20 2024
+User: ffengc
+Process ID: 319786
+-------------------------------------------------------
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#1
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:42416
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#2
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:42428
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#3
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:42442
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#4
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35164
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#5
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35174
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#6
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35188
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#7
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35196
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#8
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35198
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#9
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35206
+[REQUEST][broker_server.hpp][116] <from 127.0.0.1:35206> Request: openChannelRequest
+[REQUEST][broker_server.hpp][303] <from 127.0.0.1:35206> Request: basicQueryRequest
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#10
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:57696
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#11
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:57700
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#12
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33452
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#13
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33464
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#14
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33472
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#15
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33486
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#16
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33492
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#17
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33498
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#18
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33942
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#19
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33950
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#20
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:33956
+[REQUEST][broker_server.hpp][116] <from 127.0.0.1:33956> Request: openChannelRequest
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#21
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:58968
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#22
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:58982
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#23
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:58998
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#24
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:59012
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#25
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:59014
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#26
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35530
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#27
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35538
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#28
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:35550
+[REQUEST][broker_server.hpp][116] <from 127.0.0.1:35550> Request: openChannelRequest
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#29
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:37138
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#30
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:37152
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#31
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:37160
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#32
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:37172
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][324] connected
+[INFO][broker_server.hpp][316] 
+New Connection: 
+Connection Name: server-0.0.0.0:8085#33
+Local IP: 127.0.0.1:8085
+Peer IP: 127.0.0.1:37184
+[REQUEST][broker_server.hpp][116] <from 127.0.0.1:37184> Request: openChannelRequest
+[REQUEST][broker_server.hpp][303] <from 127.0.0.1:35550> Request: basicQueryRequest
+[REQUEST][broker_server.hpp][271] <from 127.0.0.1:37184> Request: basicConsumeRequest
+[REQUEST][broker_server.hpp][239] <from 127.0.0.1:35550> Request: basicPublishRequest
+[REQUEST][broker_server.hpp][255] <from 127.0.0.1:37184> Request: basicAckRequest
+[REQUEST][broker_server.hpp][239] <from 127.0.0.1:35550> Request: basicPublishRequest
+[REQUEST][broker_server.hpp][255] <from 127.0.0.1:37184> Request: basicAckRequest
+[REQUEST][broker_server.hpp][239] <from 127.0.0.1:35550> Request: basicPublishRequest
+[REQUEST][broker_server.hpp][255] <from 127.0.0.1:37184> Request: basicAckRequest
+[REQUEST][broker_server.hpp][239] <from 127.0.0.1:35550> Request: basicPublishRequest
+[REQUEST][broker_server.hpp][255] <from 127.0.0.1:37184> Request: basicAckRequest
+[INFO][broker_server.hpp][328] disconnected
+[INFO][broker_server.hpp][328] disconnected

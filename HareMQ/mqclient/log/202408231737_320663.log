@@ -1,0 +1,9 @@
+[INFO][client.cc][406] 
+------------------- Client Start --------------------
+Start Time: Fri Aug 23 17:37:49 2024
+User: ffengc
+Process ID: 320663
+-------------------------------------------------------
+[INFO][connection.hpp][122] connected
+[INFO][client.cc][74] channel connected
+[INFO][client.cc][378] subscribed to queue: group1_q

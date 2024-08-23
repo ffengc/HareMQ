@@ -7,7 +7,9 @@
 #ifndef __YUFC_CLIENT__
 #define __YUFC_CLIENT__
 #include "connection.hpp"
+#include <pwd.h>
 #include <sstream>
+#include <sys/types.h>
 
 const std::string red_bold = "\033[1;31m";
 std::string yellow_bold = "\033[1;33m";
@@ -23,7 +25,7 @@ private:
         { "subscribe", "Subcribe a queue and continuous consuming messages from a queue (print to stdout)" },
         { "publish", "Push a message to the specified exchange" },
         { "publish_mode", "Continuous push message to specified exchange" },
-        { "svrstat", "View the exchange information, queue information and binding information of the current server" },
+        { "svrstat", "View the exchange information, queue information and binding information of the current server, note: This is a blocking interface" },
         { "declare_exchange", "Declare an exchange on the server" },
         { "declare_queue", "Declare a message queue on the server" },
         { "delete_exchange", "Delete an exchange on the server" },
@@ -56,10 +58,11 @@ private:
     }; //
 public:
     client(const std::string& tag)
-        : __tag(tag) { }
+        : __tag(tag) { printClientInfo(); }
     ~client() {
-        if (__conn)
-            __conn->closeChannel(__ch);
+        __ch.reset();
+        __conn.reset();
+        __async_worker.reset();
     }
     void init() {
         // 1. 实例化异步工作线程
@@ -70,16 +73,11 @@ public:
         __ch = __conn->openChannel();
         hare_mq::LOG(INFO) << "channel connected" << std::endl;
     }
-    static void cb(hare_mq::channel::ptr& ch, const std::string& tag, const hare_mq::BasicProperties* bp, const std::string& body) {
-        std::cout << tag << " recv a mesg# " << body << std::endl;
-        ch->basic_ack(bp->id());
-    }
-    void print_logo() {
-        for (const auto& e : __logo)
-            std::cout << e << std::endl;
-    }
-    void run() {
+    void run(const std::string& config = "None") {
         print_logo();
+        if (config != "None")
+            if (!run_config(config))
+                return;
         while (true) {
             std::string full_cmd;
             std::cout << "> ";
@@ -95,11 +93,59 @@ public:
                 std::cerr << red_bold << cmd << ": " << reset << "command not found, use 'cmds' to show all valid commands" << std::endl;
                 continue;
             }
+            if (full_cmd_splited[0] == "exit")
+                return;
             run_cmd(full_cmd_splited);
         }
-    }
-
+        __conn->closeChannel(__ch);
+    } //
 private:
+    bool run_config(const std::string& filePath) {
+        std::map<std::size_t, std::string> lines;
+        std::ifstream file(filePath); // 打开文件
+        if (!file.is_open()) {
+            hare_mq::LOG(FATAL) << "cannot open: " << filePath << std::endl;
+            return false;
+        }
+        std::string line;
+        size_t num = 0;
+        while (std::getline(file, line)) {
+            num += 1;
+            lines.insert({ num, line });
+        }
+        file.close();
+        // 解析每一行
+        hare_mq::LOG(INFO) << "running config file: '" << filePath << "' ..." << std::endl;
+        for (const auto& e : lines) {
+            std::vector<std::string> full_cmd_splited;
+            hare_mq::string_helper::split(e.second, " ", &full_cmd_splited);
+            if (full_cmd_splited.size() == 0)
+                continue;
+            std::string cmd = full_cmd_splited[0];
+            auto it = __valid_cmds.find(cmd);
+            if (it == __valid_cmds.end()) {
+                std::cerr << red_bold << cmd << ": " << reset << "command not found, use 'cmds' to show all valid commands" << std::endl;
+                return false;
+            }
+            bool res = run_cmd(full_cmd_splited);
+            if (res) {
+                std::cout << "[" << e.first << "] run " << e.second << " success" << std::endl;
+            } else {
+                std::cout << "[" << e.first << "] run " << e.second << " failed" << std::endl;
+                return false;
+            }
+        }
+        hare_mq::LOG(INFO) << "run config file: " << filePath << " success, please check the server stats" << std::endl;
+        return true;
+    }
+    static void cb(hare_mq::channel::ptr& ch, const std::string& tag, const hare_mq::BasicProperties* bp, const std::string& body) {
+        std::cout << tag << " recv a mesg# " << body << std::endl;
+        ch->basic_ack(bp->id());
+    }
+    void print_logo() {
+        for (const auto& e : __logo)
+            std::cout << e << std::endl;
+    }
     void usage(const std::string& cmd) {
         assert(__valid_cmds.find(cmd) != __valid_cmds.end());
         std::stringstream ss;
@@ -133,38 +179,42 @@ private:
         }
         std::cerr << ss.str() << std::endl;
     }
-    void run_cmd(const std::vector<std::string>& full_cmd_splited) {
-        if (full_cmd_splited[0] == "exit") {
-            exit(0);
-        } else if (full_cmd_splited[0] == "cmds") {
+    bool run_cmd(const std::vector<std::string>& full_cmd_splited) {
+        if (full_cmd_splited[0] == "cmds") {
             for (const auto& e : __valid_cmds) {
                 std::string line = "    " + e.first + ": " + e.second;
                 std::cout << line << std::endl;
             }
+            return true;
         } else if (full_cmd_splited[0] == "cid") {
             std::cout << "current channel id: " << __ch->cid() << std::endl;
+            return true;
         } else if (full_cmd_splited[0] == "bind") {
             // ch->bind("exchange1", "queue1", "queue1");
             if (full_cmd_splited.size() != 4) {
                 usage("bind");
-                return;
+                return false;
             }
             auto ok = __ch->bind(full_cmd_splited[1], full_cmd_splited[2], full_cmd_splited[3]);
-            if (!ok)
+            if (!ok) {
                 std::cerr << red_bold << "bind failed" << reset << ", please check the server stats" << std::endl;
+                return false;
+            }
+            return true;
         } else if (full_cmd_splited[0] == "unbind") {
             // __ch->unbind()
             if (full_cmd_splited.size() != 3) {
                 usage("unbind");
-                return;
+                return false;
             }
             __ch->unbind(full_cmd_splited[1], full_cmd_splited[2]);
+            return true;
         } else if (full_cmd_splited[0] == "declare_exchange") {
             // auto empty_map = std::unordered_map<std::string, std::string>();
             // ch->declare_exchange("exchange1", hare_mq::ExchangeType::TOPIC, true, false, empty_map);
             if (full_cmd_splited.size() != 6 && full_cmd_splited.size() != 5) {
                 usage("declare_exchange");
-                return;
+                return false;
             }
             std::string name = full_cmd_splited[1];
             hare_mq::ExchangeType type = [&, this]() -> hare_mq::ExchangeType {
@@ -180,10 +230,12 @@ private:
                 }
             }();
             if (type == hare_mq::ExchangeType::UNKNOWTYPE)
-                return;
+                return false;
             if ((full_cmd_splited[3] != "true" && full_cmd_splited[3] != "false")
-                || (full_cmd_splited[4] != "true" && full_cmd_splited[4] != "false"))
+                || (full_cmd_splited[4] != "true" && full_cmd_splited[4] != "false")) {
                 usage("declare_exchange");
+                return false;
+            }
             bool durable = full_cmd_splited[3] == "true" ? true : false;
             bool auto_delete = full_cmd_splited[4] == "true" ? true : false;
             auto m = std::unordered_map<std::string, std::string>();
@@ -196,34 +248,42 @@ private:
                 for (const auto& e : args) {
                     // e: k=v
                     std::size_t pos = e.find('=');
-                    if (pos == std::string::npos)
+                    if (pos == std::string::npos) {
                         usage("declare_exchange");
+                        return false;
+                    }
                     std::string left = e.substr(0, pos);
                     std::string right = e.substr(pos + 1);
                     m.insert({ left, right });
                 }
             }
-            hare_mq::LOG(DEBUG) << name << " " << type << " " << durable << " " << auto_delete << " " << m.size() << std::endl;
-            if (!__ch->declare_exchange(name, type, durable, auto_delete, m))
+            // hare_mq::LOG(DEBUG) << name << " " << type << " " << durable << " " << auto_delete << " " << m.size() << std::endl;
+            if (!__ch->declare_exchange(name, type, durable, auto_delete, m)) {
                 std::cerr << red_bold << "declare_exchange failed" << reset << ", please check the server stats" << std::endl;
+                return false;
+            }
+            return true;
         } else if (full_cmd_splited[0] == "delete_exchange") {
             // __ch->delete_exchange();
             if (full_cmd_splited.size() != 2) {
                 usage("delete_exchange");
-                return;
+                return false;
             }
             __ch->delete_exchange(full_cmd_splited[1]);
+            return true;
         } else if (full_cmd_splited[0] == "declare_queue") {
             // const std::string &qname, bool qdurable, bool qexclusive, bool qauto_delete, const std::unordered_map<std::string, std::string> &qargs
             if (full_cmd_splited.size() != 6 && full_cmd_splited.size() != 5) {
                 usage("declare_queue");
-                return;
+                return false;
             }
             std::string name = full_cmd_splited[1];
             if ((full_cmd_splited[2] != "true" && full_cmd_splited[2] != "false")
                 || (full_cmd_splited[3] != "true" && full_cmd_splited[3] != "false")
-                || (full_cmd_splited[4] != "true" && full_cmd_splited[4] != "false"))
+                || (full_cmd_splited[4] != "true" && full_cmd_splited[4] != "false")) {
                 usage("declare_queue");
+                return false;
+            }
             bool qdurable = full_cmd_splited[2] == "true" ? true : false;
             bool qexclusive = full_cmd_splited[3] == "true" ? true : false;
             bool qauto_delete = full_cmd_splited[4] == "true" ? true : false;
@@ -237,24 +297,31 @@ private:
                 for (const auto& e : args) {
                     // e: k=v
                     std::size_t pos = e.find('=');
-                    if (pos == std::string::npos)
+                    if (pos == std::string::npos) {
                         usage("declare_queue");
+                        return false;
+                    }
                     std::string left = e.substr(0, pos);
                     std::string right = e.substr(pos + 1);
                     m.insert({ left, right });
                 }
             }
-            if (!__ch->declare_queue(name, qdurable, qexclusive, qauto_delete, m))
+            if (!__ch->declare_queue(name, qdurable, qexclusive, qauto_delete, m)) {
                 std::cerr << red_bold << "declare_queue failed" << reset << ", please check the server stats" << std::endl;
+                return false;
+            }
+            return true;
         } else if (full_cmd_splited[0] == "delete_queue") {
             // __ch->delete_queue();
             if (full_cmd_splited.size() != 2) {
                 usage("delete_queue");
-                return;
+                return false;
             }
             __ch->delete_queue(full_cmd_splited[1]);
+            return true;
         } else if (full_cmd_splited[0] == "svrstat") {
             __ch->basic_query();
+            return true;
         } else if (full_cmd_splited[0] == "publish" || full_cmd_splited[0] == "publish_mode") {
             /*
                 hare_mq::BasicProperties bp;
@@ -267,7 +334,7 @@ private:
             // publish ex1 DURABLE news.music.pop
             if (full_cmd_splited.size() != 4) {
                 usage("publish");
-                return;
+                return false;
             }
             auto exchange_name = full_cmd_splited[1];
             hare_mq::BasicProperties bp;
@@ -278,7 +345,6 @@ private:
                 else if (full_cmd_splited[2] == "DIRECT")
                     return hare_mq::DeliveryMode::UNDURABLE;
                 else {
-                    usage("publish");
                     return hare_mq::DeliveryMode::UNKNOWMODE;
                 }
             }());
@@ -286,12 +352,13 @@ private:
             do {
                 // 先执行一次
                 std::string mesg;
-                std::cout << "[please input your message]# " << std::endl;
+                std::cout << "[please input your message]# ";
                 std::getline(std::cin, mesg);
                 if (mesg == "quit")
                     break;
                 __ch->basic_publish(exchange_name, &bp, mesg);
             } while (full_cmd_splited[0] == "publish_mode");
+            return true;
         } else if (full_cmd_splited[0] == "subscribe") {
             // ch->basic_consume("consumer1", qname, false, fn);
             auto fn = std::bind(&cb, __ch, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
@@ -299,12 +366,14 @@ private:
             // subscribe yufc queue2 false
             if (full_cmd_splited.size() != 4) {
                 usage("subscribe");
-                return;
+                return false;
             }
             std::string consumer_name = full_cmd_splited[1];
             std::string queue_name = full_cmd_splited[2];
-            if (full_cmd_splited[3] != "true" && full_cmd_splited[3] != "false")
+            if (full_cmd_splited[3] != "true" && full_cmd_splited[3] != "false") {
                 usage("subscribe");
+                return false;
+            }
             bool auto_ack = full_cmd_splited[3] == "true" ? true : false;
             hare_mq::LOG(INFO) << "subscribed to queue: " << queue_name << std::endl;
             std::thread inputThread(check_quit_while_consuming); // 监听 stdin 是否有退出信号
@@ -316,13 +385,31 @@ private:
             }
             inputThread.join();
             __ch->basic_cancel();
+            return true;
         } else if (full_cmd_splited[0] == "clear") {
             system("clear");
+            return true;
         } else if (full_cmd_splited[0] == "logo") {
             print_logo();
+            return true;
+        } else {
+            assert(false);
         }
-    }
-
+    } //
+    void printClientInfo() {
+        auto startTime = std::time(nullptr);
+        std::string startTimeStr = std::ctime(&startTime);
+        auto uid = getuid();
+        struct passwd* pw = getpwuid(uid);
+        std::string userName = (pw ? pw->pw_name : "Unknown User");
+        pid_t pid = getpid();
+        hare_mq::LOG(INFO) << std::endl
+                           << "------------------- Client Start --------------------" << std::endl
+                           << "Start Time: " << startTimeStr
+                           << "User: " << userName << std::endl
+                           << "Process ID: " << std::to_string(pid) << std::endl
+                           << "-------------------------------------------------------" << std::endl;
+    } //
 private:
     static void check_quit_while_consuming() {
         std::string input;
@@ -336,9 +423,12 @@ private:
     }
 };
 #endif
-int main() {
+int main(int argc, char** argv) {
     client cli("yufc");
     cli.init();
-    cli.run();
+    if (argc == 1)
+        cli.run();
+    else
+        cli.run(argv[1]);
     return 0;
 }

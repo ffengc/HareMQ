@@ -92,12 +92,7 @@ private:
         }
         __codec->send(__conn, resp);
     }
-    void query_cb(const std::string& query_res) {
-        basicQueryResponse resp;
-        resp.set_cid(__cid);
-        resp.set_body(query_res);
-        __codec->send(__conn, resp);
-    } //
+
 public:
     channel(const std::string& cid,
         const virtual_host::ptr& host,
@@ -204,8 +199,11 @@ public:
     }
     void basic_query(const basicQueryRequestPtr& req) {
         std::string ret = __host->basic_query();
-        query_cb(ret);
-        return basic_response(true, req->rid(), req->cid());
+        basicQueryResponse resp;
+        resp.set_rid(req->rid());
+        resp.set_cid(__cid);
+        resp.set_body(ret);
+        __codec->send(__conn, resp);
     }
 };
 

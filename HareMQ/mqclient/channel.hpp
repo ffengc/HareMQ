@@ -35,6 +35,7 @@ private:
     std::mutex __mtx;
     std::condition_variable __cv;
     std::unordered_map<std::string, basicCommonResponsePtr> __basic_resp; //
+    std::unordered_map<std::string, basicQueryResponsePtr> __basic_query_resp; //
 public:
     channel(const muduo::net::TcpConnectionPtr& conn, const ProtobufCodecPtr& codec)
         : __conn(conn)
@@ -213,7 +214,7 @@ public:
         req.set_rid(rid);
         req.set_cid(__cid);
         __codec->send(__conn, req);
-        basicCommonResponsePtr resp = wait_response(rid);
+        basicQueryResponsePtr resp = wait_query_response(rid);
         return;
     } //
 public:
@@ -223,6 +224,11 @@ public:
         __basic_resp.insert({ resp->rid(), resp });
         __cv.notify_all(); // 唤醒 wait_response
     } // 连接收到响应向hashmap添加响应
+    void push_basic_response(const basicQueryResponsePtr& resp) {
+        std::unique_lock<std::mutex> lock(__mtx);
+        __basic_query_resp.insert({ resp->rid(), resp });
+        __cv.notify_all(); 
+    }
     // 连接收到消息推送后，需要通过信道找到对应的消费者对象，通过回调函数进行消息处理
     void consume(const basicConsumeResponsePtr& resp) {
         // std::unique_lock<std::mutex> lock(__mtx); // 千千万万不能加锁！这个是线程调的！
@@ -236,11 +242,6 @@ public:
         }
         __consumer->callback(resp->consumer_tag(), resp->mutable_properties(), resp->body());
     } //
-    void query(const basicQueryResponsePtr& resp) {
-        std::unique_lock<std::mutex> lock(__mtx);
-        std::cout << resp->body() << std::endl;
-    }
-
 private:
     basicCommonResponsePtr wait_response(const std::string& rid) {
         std::unique_lock<std::mutex> lock(__mtx);
@@ -251,6 +252,16 @@ private:
         __basic_resp.erase(rid);
         return bresp;
     } // 等待指定请求的响应
+    basicQueryResponsePtr wait_query_response(const std::string& rid) {
+        std::unique_lock<std::mutex> lock(__mtx);
+        __cv.wait(lock, [&rid, this]() {
+            return __basic_query_resp.find(rid) != __basic_query_resp.end();
+        });
+        basicQueryResponsePtr bresp = __basic_query_resp[rid];
+        __basic_query_resp.erase(rid);
+        std::cout << bresp->body() << std::endl;
+        return bresp;
+    }
 };
 
 class channel_manager {

@@ -1,5 +1,9 @@
 # SQLite3
 
+- [简体中文](./sqlite.md)
+- [English](./sqlite-en.md)
+
+***
 - [SQLite3](#sqlite3)
   - [什么是SQLite](#什么是sqlite)
   - [为什么需要用SQLite](#为什么需要用sqlite)

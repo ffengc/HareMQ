@@ -105,10 +105,11 @@ private:
     }
     void queryRespone(const muduo::net::TcpConnectionPtr& conn, const basicQueryResponsePtr& message, muduo::Timestamp ts) {
         channel::ptr ch = __channel_manager->select_channel(message->cid());
-        // 2. 封装异步任务，抛入到线程池
-        __worker->pool.push([ch, message]() {
-            ch->query(message);
-        });
+        if (ch == nullptr) {
+            LOG(ERROR) << "cannot find channel info" << std::endl;
+            return;
+        }
+        ch->push_basic_response(message);
     }
     void onUnknownMessage(const muduo::net::TcpConnectionPtr& conn, const MessagePtr& message, muduo::Timestamp ts) {
         LOG(INFO) << "unknown result: " << message->GetTypeName() << std::endl;

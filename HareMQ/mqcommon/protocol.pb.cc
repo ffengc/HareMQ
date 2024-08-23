@@ -271,7 +271,8 @@ struct basicQueryRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 basicQueryRequestDefaultTypeInternal _basicQueryRequest_default_instance_;
 PROTOBUF_CONSTEXPR basicQueryResponse::basicQueryResponse(
     ::_pbi::ConstantInitialized)
-  : cid_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  : rid_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , cid_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
   , body_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
 struct basicQueryResponseDefaultTypeInternal {
   PROTOBUF_CONSTEXPR basicQueryResponseDefaultTypeInternal()
@@ -464,6 +465,7 @@ const uint32_t TableStruct_protocol_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::hare_mq::basicQueryResponse, rid_),
   PROTOBUF_FIELD_OFFSET(::hare_mq::basicQueryResponse, cid_),
   PROTOBUF_FIELD_OFFSET(::hare_mq::basicQueryResponse, body_),
 };
@@ -549,16 +551,16 @@ const char descriptor_table_protodef_protocol_2eproto[] PROTOBUF_SECTION_VARIABL
   " \001(\t\022,\n\nproperties\030\004 \001(\0132\030.hare_mq.Basic"
   "Properties\";\n\023basicCommonResponse\022\013\n\003rid"
   "\030\001 \001(\t\022\013\n\003cid\030\002 \001(\t\022\n\n\002ok\030\003 \001(\010\"-\n\021basic"
-  "QueryRequest\022\013\n\003rid\030\001 \001(\t\022\013\n\003cid\030\002 \001(\t\"/"
-  "\n\022basicQueryResponse\022\013\n\003cid\030\001 \001(\t\022\014\n\004bod"
-  "y\030\002 \001(\tb\006proto3"
+  "QueryRequest\022\013\n\003rid\030\001 \001(\t\022\013\n\003cid\030\002 \001(\t\"<"
+  "\n\022basicQueryResponse\022\013\n\003rid\030\001 \001(\t\022\013\n\003cid"
+  "\030\002 \001(\t\022\014\n\004body\030\003 \001(\tb\006proto3"
   ;
 static const ::_pbi::DescriptorTable* const descriptor_table_protocol_2eproto_deps[1] = {
   &::descriptor_table_msg_2eproto,
 };
 static ::_pbi::once_flag descriptor_table_protocol_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_protocol_2eproto = {
-    false, false, 1655, descriptor_table_protodef_protocol_2eproto,
+    false, false, 1668, descriptor_table_protodef_protocol_2eproto,
     "protocol.proto",
     &descriptor_table_protocol_2eproto_once, descriptor_table_protocol_2eproto_deps, 1, 18,
     schemas, file_default_instances, TableStruct_protocol_2eproto::offsets,
@@ -5572,6 +5574,14 @@ basicQueryResponse::basicQueryResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
 basicQueryResponse::basicQueryResponse(const basicQueryResponse& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  rid_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    rid_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_rid().empty()) {
+    rid_.Set(from._internal_rid(), 
+      GetArenaForAllocation());
+  }
   cid_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
     cid_.Set("", GetArenaForAllocation());
@@ -5592,6 +5602,10 @@ basicQueryResponse::basicQueryResponse(const basicQueryResponse& from)
 }
 
 inline void basicQueryResponse::SharedCtor() {
+rid_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  rid_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 cid_.InitDefault();
 #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
   cid_.Set("", GetArenaForAllocation());
@@ -5613,6 +5627,7 @@ basicQueryResponse::~basicQueryResponse() {
 
 inline void basicQueryResponse::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  rid_.Destroy();
   cid_.Destroy();
   body_.Destroy();
 }
@@ -5627,6 +5642,7 @@ void basicQueryResponse::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  rid_.ClearToEmpty();
   cid_.ClearToEmpty();
   body_.ClearToEmpty();
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
@@ -5638,9 +5654,19 @@ const char* basicQueryResponse::_InternalParse(const char* ptr, ::_pbi::ParseCon
     uint32_t tag;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // string cid = 1;
+      // string rid = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_rid();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "hare_mq.basicQueryResponse.rid"));
+        } else
+          goto handle_unusual;
+        continue;
+      // string cid = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
           auto str = _internal_mutable_cid();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
@@ -5648,9 +5674,9 @@ const char* basicQueryResponse::_InternalParse(const char* ptr, ::_pbi::ParseCon
         } else
           goto handle_unusual;
         continue;
-      // string body = 2;
-      case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+      // string body = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
           auto str = _internal_mutable_body();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
@@ -5687,24 +5713,34 @@ uint8_t* basicQueryResponse::_InternalSerialize(
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // string cid = 1;
+  // string rid = 1;
+  if (!this->_internal_rid().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_rid().data(), static_cast<int>(this->_internal_rid().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "hare_mq.basicQueryResponse.rid");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_rid(), target);
+  }
+
+  // string cid = 2;
   if (!this->_internal_cid().empty()) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
       this->_internal_cid().data(), static_cast<int>(this->_internal_cid().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
       "hare_mq.basicQueryResponse.cid");
     target = stream->WriteStringMaybeAliased(
-        1, this->_internal_cid(), target);
+        2, this->_internal_cid(), target);
   }
 
-  // string body = 2;
+  // string body = 3;
   if (!this->_internal_body().empty()) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
       this->_internal_body().data(), static_cast<int>(this->_internal_body().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
       "hare_mq.basicQueryResponse.body");
     target = stream->WriteStringMaybeAliased(
-        2, this->_internal_body(), target);
+        3, this->_internal_body(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5723,14 +5759,21 @@ size_t basicQueryResponse::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // string cid = 1;
+  // string rid = 1;
+  if (!this->_internal_rid().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_rid());
+  }
+
+  // string cid = 2;
   if (!this->_internal_cid().empty()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_cid());
   }
 
-  // string body = 2;
+  // string body = 3;
   if (!this->_internal_body().empty()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
@@ -5759,6 +5802,9 @@ void basicQueryResponse::MergeFrom(const basicQueryResponse& from) {
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (!from._internal_rid().empty()) {
+    _internal_set_rid(from._internal_rid());
+  }
   if (!from._internal_cid().empty()) {
     _internal_set_cid(from._internal_cid());
   }
@@ -5784,6 +5830,10 @@ void basicQueryResponse::InternalSwap(basicQueryResponse* other) {
   auto* lhs_arena = GetArenaForAllocation();
   auto* rhs_arena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &rid_, lhs_arena,
+      &other->rid_, rhs_arena
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
       &cid_, lhs_arena,
       &other->cid_, rhs_arena

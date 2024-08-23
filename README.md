@@ -40,6 +40,14 @@ Message queue middleware such as RabbitMQ is widely used in various scenarios su
 
 **This project will focus on RabbitMQ, learn and extract the essence of it, learn the basic principles of RabbitMQ, and perform a simple simulation implementation of it. By studying this project, you can deepen your understanding of message queue middleware, which will be of great help to subsequent development.**
 
+## Effect Demonstration
+
+![](./assets/7.png)
+
+As shown in the figure, after the server is turned on, log in to the client using two terminals, define the switch, queue and binding relationship, and then `clientA` sends a message to the switch `group1`. After `clientB` subscribes to the queue `group1_q`, it can receive the message sent by `clientA`. This is the most basic function demonstration. For other detailed functions, please refer to the detailed usage documentation.
+
+- [The Documentation Of HareMQ](./docs/documentation-en.md)
+
 ## Technology stack
 
 - **Serialization framework:** Protobuf for binary serialization
@@ -182,12 +190,12 @@ These are the documents and codes I compiled while learning some third-party fra
 
 If you are not interested in this part or have already mastered the use of these frameworks, you can skip it directly.
 
-- doc: [protobuf.md](./docs/proto.md), code: `HareMQ/demo/protobuf`
-- doc: [muduo.md](./docs/muduo.md), code: `HareMQ/demo/muduo`
-- doc: [sqlite.md](./docs/sqlite.md), code: `HareMQ/demo/sqlite`
-- doc: [gtest.md](./docs/gtest.md), code: `HareMQ/demo/gtest`
-- doc: [asynchronous in C++11](./docs/asynchronous.md), code: `HareMQ/demo/asynchronous`
-- doc: [Thread pool component based on C++ asynchronous operation](./docs/thread_pool.md), 代码: `HareMQ/demo/thread_pool`
+- doc: [protobuf.md](./docs/proto-en.md), code: `HareMQ/demo/protobuf`
+- doc: [muduo.md](./docs/muduo-en.md), code: `HareMQ/demo/muduo`
+- doc: [sqlite.md](./docs/sqlite-en.md), code: `HareMQ/demo/sqlite`
+- doc: [gtest.md](./docs/gtest-en.md), code: `HareMQ/demo/gtest`
+- doc: [asynchronous in C++11](./docs/asynchronous-en.md), code: `HareMQ/demo/asynchronous`
+- doc: [Thread pool component based on C++ asynchronous operation](./docs/thread_pool-en.md), code: `HareMQ/demo/thread_pool`
 
 ## Project Framework
 

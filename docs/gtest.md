@@ -1,5 +1,9 @@
 # GTest
 
+- [简体中文](./gtest.md)
+- [English](./gtest-en.md)
+
+***
 - [GTest](#gtest)
   - [GTest是什么](#gtest是什么)
   - [我们需要学习的GTest功能](#我们需要学习的gtest功能)

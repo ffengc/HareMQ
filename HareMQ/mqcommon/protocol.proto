@@ -110,6 +110,7 @@ message basicQueryRequest {
     string cid = 2;
 }
 message basicQueryResponse {
-    string cid = 1;
-    string body = 2;  
+    string rid = 1;
+    string cid = 2;
+    string body = 3;  
 }

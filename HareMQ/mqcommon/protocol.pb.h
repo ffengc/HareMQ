@@ -3231,10 +3231,25 @@ class basicQueryResponse final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kCidFieldNumber = 1,
-    kBodyFieldNumber = 2,
+    kRidFieldNumber = 1,
+    kCidFieldNumber = 2,
+    kBodyFieldNumber = 3,
   };
-  // string cid = 1;
+  // string rid = 1;
+  void clear_rid();
+  const std::string& rid() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_rid(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_rid();
+  PROTOBUF_NODISCARD std::string* release_rid();
+  void set_allocated_rid(std::string* rid);
+  private:
+  const std::string& _internal_rid() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_rid(const std::string& value);
+  std::string* _internal_mutable_rid();
+  public:
+
+  // string cid = 2;
   void clear_cid();
   const std::string& cid() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -3248,7 +3263,7 @@ class basicQueryResponse final :
   std::string* _internal_mutable_cid();
   public:
 
-  // string body = 2;
+  // string body = 3;
   void clear_body();
   const std::string& body() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -3269,6 +3284,7 @@ class basicQueryResponse final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr rid_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr cid_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr body_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -6137,7 +6153,57 @@ inline void basicQueryRequest::set_allocated_cid(std::string* cid) {
 
 // basicQueryResponse
 
-// string cid = 1;
+// string rid = 1;
+inline void basicQueryResponse::clear_rid() {
+  rid_.ClearToEmpty();
+}
+inline const std::string& basicQueryResponse::rid() const {
+  // @@protoc_insertion_point(field_get:hare_mq.basicQueryResponse.rid)
+  return _internal_rid();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void basicQueryResponse::set_rid(ArgT0&& arg0, ArgT... args) {
+ 
+ rid_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:hare_mq.basicQueryResponse.rid)
+}
+inline std::string* basicQueryResponse::mutable_rid() {
+  std::string* _s = _internal_mutable_rid();
+  // @@protoc_insertion_point(field_mutable:hare_mq.basicQueryResponse.rid)
+  return _s;
+}
+inline const std::string& basicQueryResponse::_internal_rid() const {
+  return rid_.Get();
+}
+inline void basicQueryResponse::_internal_set_rid(const std::string& value) {
+  
+  rid_.Set(value, GetArenaForAllocation());
+}
+inline std::string* basicQueryResponse::_internal_mutable_rid() {
+  
+  return rid_.Mutable(GetArenaForAllocation());
+}
+inline std::string* basicQueryResponse::release_rid() {
+  // @@protoc_insertion_point(field_release:hare_mq.basicQueryResponse.rid)
+  return rid_.Release();
+}
+inline void basicQueryResponse::set_allocated_rid(std::string* rid) {
+  if (rid != nullptr) {
+    
+  } else {
+    
+  }
+  rid_.SetAllocated(rid, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (rid_.IsDefault()) {
+    rid_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:hare_mq.basicQueryResponse.rid)
+}
+
+// string cid = 2;
 inline void basicQueryResponse::clear_cid() {
   cid_.ClearToEmpty();
 }
@@ -6187,7 +6253,7 @@ inline void basicQueryResponse::set_allocated_cid(std::string* cid) {
   // @@protoc_insertion_point(field_set_allocated:hare_mq.basicQueryResponse.cid)
 }
 
-// string body = 2;
+// string body = 3;
 inline void basicQueryResponse::clear_body() {
   body_.ClearToEmpty();
 }
