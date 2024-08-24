@@ -1,7 +1,5 @@
 <!-- ![](./assets/1.png) -->
 
-<div align="center">
-
 # HareMQ
 
 A C++ version of the simplified message queue component is implemented based on RabbitMQ. In order to learn RabbitMQ, this project encompasses the essence and core functions of a high-performance messaging system, imitates the basic architecture of RabbitMQ, and focuses on the publish-subscribe mechanism.
@@ -16,7 +14,6 @@ A C++ version of the simplified message queue component is implemented based on 
     <img src="https://img.shields.io/static/v1?label=Blog&message=Blog Page&color=brightgreen" alt="Mutable.ai Auto Wiki">
 </a>
 
-</div>
 
 - **[简体中文](./README-cn.md)**
 - **[English](./README.md)**
@@ -374,4 +371,17 @@ Consumed messages need to be responded to. There are two response modes:
 
 ## Detailed implementation
 
-- **[./docs/work.md](./docs/work.md)**
+- **[./docs/work.md](./docs/work-en.md)**
+
+
+## Project Extension
+
+This project is ultimately just a simplified version of `RabbitMQ`, which only implements the most core functions of `RabbitMQ`. The purpose of doing this project is just to learn the underlying essential logic of `RabbitMQ`, so there are still many places that can be expanded.
+
+- Virtual machine management: In the current implementation project, only one virtual host is supported. But in `RabbitMQ`, multiple hosts can be supported, and virtual machine management is supported.
+- User management/user authentication/login function: In this project, queues, switches and their binding relationships are simply hard-defined in the `client` code, and the user name is also simply `consumer1`, so user management can be expanded and maintained.
+- Exclusive mode and automatic deletion of switches/queues
+- Sender confirmation (broker's confirmation response to the producer)
+- Message management method
+- Management interface
+- Management page: `RabbitMQ` will provide a web page as a client, allowing users to manage switches, queues and virtual machines.
