@@ -1,6 +1,5 @@
 <!-- ![](./assets/1.png) -->
 
-<div align="center">
 
 # HareMQ
 
@@ -15,8 +14,6 @@
 <a href="https://ffengc.github.io/gh-blog/">
     <img src="https://img.shields.io/static/v1?label=Blog&message=Blog Page&color=brightgreen" alt="Mutable.ai Auto Wiki">
 </a>
-
-</div>
 
 - **[简体中文](./README-cn.md)**
 - **[English](./README.md)**

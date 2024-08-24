@@ -55,7 +55,7 @@ inline const char* GetColor(const std::string& level) {
     case REQUEST:
         return CYAN;
     default:
-        return CYAN;
+        return RESET;
     }
 }
 
