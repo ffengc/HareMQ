@@ -39,6 +39,12 @@ Message queue middleware such as RabbitMQ is widely used in various scenarios su
 
 ## Effect Demonstration
 
+<div align="center">
+
+https://github.com/user-attachments/assets/61f75c44-926b-4938-b773-81f1ef1069da
+
+</div>
+
 ![](./assets/7.png)
 
 As shown in the figure, after the server is turned on, log in to the client using two terminals, define the switch, queue and binding relationship, and then `clientA` sends a message to the switch `group1`. After `clientB` subscribes to the queue `group1_q`, it can receive the message sent by `clientA`. This is the most basic function demonstration. For other detailed functions, please refer to the detailed usage documentation.

@@ -38,6 +38,12 @@ RabbitMQ 是一个流行的开源消息队列系统，支持多种消息协议�
 
 ## 效果演示
 
+<div align="center">
+
+https://github.com/user-attachments/assets/61f75c44-926b-4938-b773-81f1ef1069da
+
+</div>
+
 ![](./assets/7.png)
 
 如图所示，在服务端开启之后。用两个终端分别登录客户端，定义交换机、队列和绑定关系之后，`clientA` 向交换机 `group1` 发送消息，`clientB` 在订阅队列 `group1_q` 之后，能收到 `clientA` 发送的消息。这个就是最基本的功能演示，其他详细功能请见详细的使用文档。
